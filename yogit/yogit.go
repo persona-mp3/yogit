@@ -4,13 +4,11 @@ import (
 	// "compress/gzip"
 	"encoding/hex"
 	"fmt"
-	// "log"
 	"os"
 	"strings"
 	"time"
 	"io"
 	"bytes"
-	// "encoding/json"
 	"crypto/sha1"
 )
 
@@ -87,46 +85,6 @@ func Init() {
 	fmt.Println("DONE")
 	fmt.Printf("So the magic that just happend is that key folders in this directory ./.yogit\n")
 }
-
-
-// func CommitFunc(message string) {
-// 	// parent := ParentCommit()
-// 	// -> we first need to check if all the folders have been properly initialised and theres a staging area
-// 	// for now lets just take the hash of commitMsg
-// 	hasher := sha1.New()
-// 	hasher.Write([]byte(message))
-// 	hashContent := hasher.Sum(nil)
-// 	hashId := hex.EncodeToString(hashContent)
-//
-// 	hash := HashId {
-// 		Id: hashId,
-// 	}
-//
-// 	commit := Commit {
-// 		// Author -> read from globals
-// 	}
-//
-// 	commit.CommitMsg = message
-// 	commit.CommittedAt = time.Now()
-// 	commit.Id = hash
-// 	commit.Author = "persona-mp3@github.com"
-// 	commit.Contact = "persona-mp3@github.com"
-//
-// 	fmt.Println(" yo! your new commit has been saved")
-//
-// 	fmt.Printf(" Commit Message: %-20s\n Commit Id: %s\n CommittedAt: %s\n", commit.CommitMsg, commit.Hash, commit.CommittedAt.Format("Jan 2, 2006, 3:04 PM"))
-//
-// 	logFile, err := os.OpenFile(".yogit/log/logs", os.O_CREATE | os.O_RDWR | os.O_APPEND, 0777)
-// 	LogErr(err, "Error opening log file to record new commit")
-// 	defer logFile.Close()
-//
-// 	logger := log.New(logFile, "", 0)
-// 	logger.Printf("%-30s  %-30s  %-20s  %-40s %s\n",commit.Author, commit.Contact, hash.Id, message, time.Now().Format("Jan 2, 2006, 3:04 PM") ) 
-//
-// 	updateBranch(hash)
-//
-// 	fmt.Printf("\njust recorded your commit to ./.yogit/log/logs\n")
-// }
 
 func updateBranch(hash HashId) {
 	// Find what the current HEAD is pointing at

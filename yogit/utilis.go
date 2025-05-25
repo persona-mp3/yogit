@@ -46,7 +46,6 @@ func SaveCommitToObj_u(commitHash Sha1Hash, commit Commit) {
 	defer commitFile.Close()
 	commit.Id = commitHash
 
-	// _, errW := fmt.Fprintf(commitFile, "+%v\n", commit)
 	_, errW := fmt.Fprintf(commitFile, "author:%s  id:%s  message:%s tree:%s at:%s\n", commit.Author, commit.Id, commit.CommitMsg,commit.Tree, commit.CommittedAt.Format("Jan 2, 1990 3:04 PM"))
 	LogErr(errW, "Error writing to commit file")
 

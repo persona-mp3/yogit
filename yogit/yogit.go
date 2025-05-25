@@ -1,16 +1,15 @@
 package yogit
 
 import (
-	"compress/gzip"
+	// "compress/gzip"
 	"encoding/hex"
-	// "weak"
-	// "encoding"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 	"time"
-
+	"io"
+	"bytes"
 	// "encoding/json"
 	"crypto/sha1"
 )
@@ -142,8 +141,10 @@ func updateBranch(hash HashId) {
 
 	fmt.Printf("updated your current branch with the your state, now the header knows where you are and your state\nN bytes written %d\n", n)
 }
-
-func Add(file string) {
+type Sha1Hash struct {
+	Hash string
+}
+func Add(file string) Sha1Hash{
 	fmt.Println("adding all files onto the staging area")
 	// write all current files to staging area : index, but for now, lets just add one
 	// open the file that wants to be saved
@@ -167,13 +168,49 @@ func Add(file string) {
 	blob, err := os.Create(blobName)
 	LogErr(err, "Error in making blob")
 
-	gzipWriter := gzip.NewWriter(blob)
-	gzipWriter.Write(content)
-	gzipWriter.Close()
+	// gzipWriter := gzip.NewWriter(blob)
+	// gzipWriter.Write(content)
+	// gzipWriter.Close()
+	byteReader := bytes.NewReader(content)
+	io.Copy(blob, byteReader)
 	
 	fmt.Println("hashed_content  --- ",hashId)
 	fmt.Println("name to store folder --- ",objectFolder)
 
-	fmt.Printf("\nFile compressed successfully...")
+	fmt.Printf("\nFile compressed successfully...\n")
+
+	return Sha1Hash{Hash:hashId}
 
 }
+
+func StagingArea() {
+	// we need to write all current files into the staging area in .yogit/stage
+	dirEntries, err := os.ReadDir(".")
+	LogErr(err, "Error in reading StagingArea(), reading directory")
+
+	stage, err := os.OpenFile(".yogit/stage", os.O_CREATE | os.O_APPEND | os.O_RDWR, 0777)
+	LogErr(err, "Error in opening stage file")
+	defer stage.Close()
+
+	for _, path := range dirEntries {
+		if path.Name() == ".git" || path.Name() == ".yogit" || path.IsDir() {
+			continue
+		} 
+
+
+		info, err := path.Info()
+		LogErr(err, "Error in getting file info")
+
+		hashId := Add(info.Name())
+		_, errw := fmt.Fprintf(stage, "%04o %-20s %20s\n", info.Mode().Perm(), hashId, info.Name() )
+		LogErr(errw, "Error in writing to file")
+	}
+
+	fmt.Println("check ./yogit/stage")
+}
+
+// so inside git add, we need to 
+// Save(*computing hash, fileName) -> return hash, fileName
+// UpdateIndex(fileName, hash) // unless we are doing everything in one loop
+// f -> { saveFile::hash , writeIndex::fName, hash, permission}
+

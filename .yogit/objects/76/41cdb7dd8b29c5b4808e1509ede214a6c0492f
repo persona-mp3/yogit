@@ -283,4 +283,4 @@ so when staticTree is opened, you'll see some of the following stats:
  -> children: main.css, logo.jpg <which will be ther hashes, if main had j232342332, j2 will be its key, 34326892348234423 its value/content>
  and then the child itself will just contain the contents, it wont neccessarily point to the parent
 
-// dev purposes
+

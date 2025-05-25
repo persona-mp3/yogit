@@ -1,7 +1,10 @@
 package yogit
 
 import (
+	"compress/gzip"
 	"encoding/hex"
+	// "weak"
+	// "encoding"
 	"fmt"
 	"log"
 	"os"
@@ -35,7 +38,7 @@ func Init() {
 	err := os.MkdirAll(".yogit", 0777)
 	LogErr(err, "Error in making yogit folders")
 
-	subFolders := []string{"object", "log", "refs"}
+	subFolders := []string{"objects", "log", "refs"}
 	subFiles := []string{"index", "HEADER", "GLOBALS"}
 	logSubFiles := []string{"logs"}
 	refSubFolders := []string{"heads", "tags"}
@@ -81,10 +84,6 @@ func Init() {
 	fmt.Printf("So the magic that just happend is that key folders in this directory ./.yogit\n")
 }
 
-func Add() {
-	fmt.Println("adding all files onto the staging area")
-	// write all current files to staging area : index, but for now, lets just add one
-}
 
 func CommitFunc(message string) {
 	// parent := ParentCommit()
@@ -142,4 +141,39 @@ func updateBranch(hash HashId) {
 	LogErr(err, "Error in updating branch")
 
 	fmt.Printf("updated your current branch with the your state, now the header knows where you are and your state\nN bytes written %d\n", n)
+}
+
+func Add(file string) {
+	fmt.Println("adding all files onto the staging area")
+	// write all current files to staging area : index, but for now, lets just add one
+	// open the file that wants to be saved
+
+	content, err := os.ReadFile(file)
+	LogErr(err, "Error occured, could not find file specified")
+	// hash the content, get the first 2 names
+	hasher := sha1.New() 
+	hasher.Write([]byte(content))
+	hashedContent := hasher.Sum(nil)
+	hashId := hex.EncodeToString(hashedContent)
+	objectFolder := hashId[:2]
+
+	saveAt := fmt.Sprintf(".yogit/objects/%s", objectFolder)
+	errM := os.Mkdir(saveAt, 0777)
+  LogErr(errM, "check Add()")
+	
+	blobPath := fmt.Sprintf("%s/%s", saveAt, objectFolder[2:])
+	blobName := fmt.Sprintf("%s%s", blobPath, hashId[2:])
+	fmt.Println(blobName)
+	blob, err := os.Create(blobName)
+	LogErr(err, "Error in making blob")
+
+	gzipWriter := gzip.NewWriter(blob)
+	gzipWriter.Write(content)
+	gzipWriter.Close()
+	
+	fmt.Println("hashed_content  --- ",hashId)
+	fmt.Println("name to store folder --- ",objectFolder)
+
+	fmt.Printf("\nFile compressed successfully...")
+
 }

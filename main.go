@@ -18,17 +18,10 @@ func ReadCommandLine(args []string) {
 	switch {
 
 	case cmds == 2: {
-		// fmt.Println("command line args passed init")
 		if args[1] == "init" {
 			yogit.Init()
 			return
 		}
-
-		if args[1] == "add" {
-			yogit.Add()
-			return
-		}
-
 		return
 	}
 
@@ -39,6 +32,10 @@ func ReadCommandLine(args []string) {
 			return
 		}
 
+		if args[1] == "add" && args[2] != "" {
+			yogit.Add(args[2])
+			return
+		}
 		return
 	}
 

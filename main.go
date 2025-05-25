@@ -28,7 +28,7 @@ func ReadCommandLine(args []string) {
 	case cmds == 3: {
 		// fmt.Println("command line args has two arguments passed in")
 		if args[1] == "save" && args[2] != "" {
-			yogit.CommitFunc(args[2])
+			yogit.SaveCommit(args[2])
 			return
 		}
 

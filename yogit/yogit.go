@@ -4,7 +4,7 @@ import (
 	// "compress/gzip"
 	"encoding/hex"
 	"fmt"
-	"log"
+	// "log"
 	"os"
 	"strings"
 	"time"
@@ -15,8 +15,9 @@ import (
 )
 
 type Commit struct {
-	Parent *HashId `json:"parent"`
-	Id HashId `json:"hashId"`
+	// Parent *HashId `json:"parent"`
+	Id Sha1Hash `json:"hashId"`
+	Tree Sha1Hash `json:"tree"`
 	Author string `json:"author"`
 	Contact string `json:"contact"`
 	CommitMsg string `json:"commitMsg"`
@@ -25,6 +26,10 @@ type Commit struct {
 
 type HashId struct {
 	Id string
+}
+
+type Sha1Hash struct {
+	Hash string
 }
 
 func YoGit() {
@@ -84,44 +89,44 @@ func Init() {
 }
 
 
-func CommitFunc(message string) {
-	// parent := ParentCommit()
-	// -> we first need to check if all the folders have been properly initialised and theres a staging area
-	// for now lets just take the hash of commitMsg
-	hasher := sha1.New()
-	hasher.Write([]byte(message))
-	hashContent := hasher.Sum(nil)
-	hashId := hex.EncodeToString(hashContent)
-
-	hash := HashId {
-		Id: hashId,
-	}
-
-	commit := Commit {
-		// Author -> read from globals
-	}
-
-	commit.CommitMsg = message
-	commit.CommittedAt = time.Now()
-	commit.Id = hash
-	commit.Author = "persona-mp3@github.com"
-	commit.Contact = "persona-mp3@github.com"
-
-	fmt.Println(" yo! your new commit has been saved")
-
-	fmt.Printf(" Commit Message: %-20s\n Commit Id: %s\n CommittedAt: %s\n", commit.CommitMsg, commit.Id.Id, commit.CommittedAt.Format("Jan 2, 2006, 3:04 PM"))
-
-	logFile, err := os.OpenFile(".yogit/log/logs", os.O_CREATE | os.O_RDWR | os.O_APPEND, 0777)
-	LogErr(err, "Error opening log file to record new commit")
-	defer logFile.Close()
-	
-	logger := log.New(logFile, "", 0)
-	logger.Printf("%-30s  %-30s  %-20s  %-40s %s\n",commit.Author, commit.Contact, hash.Id, message, time.Now().Format("Jan 2, 2006, 3:04 PM") ) 
-
-	updateBranch(hash)
-
-	fmt.Printf("\njust recorded your commit to ./.yogit/log/logs\n")
-}
+// func CommitFunc(message string) {
+// 	// parent := ParentCommit()
+// 	// -> we first need to check if all the folders have been properly initialised and theres a staging area
+// 	// for now lets just take the hash of commitMsg
+// 	hasher := sha1.New()
+// 	hasher.Write([]byte(message))
+// 	hashContent := hasher.Sum(nil)
+// 	hashId := hex.EncodeToString(hashContent)
+//
+// 	hash := HashId {
+// 		Id: hashId,
+// 	}
+//
+// 	commit := Commit {
+// 		// Author -> read from globals
+// 	}
+//
+// 	commit.CommitMsg = message
+// 	commit.CommittedAt = time.Now()
+// 	commit.Id = hash
+// 	commit.Author = "persona-mp3@github.com"
+// 	commit.Contact = "persona-mp3@github.com"
+//
+// 	fmt.Println(" yo! your new commit has been saved")
+//
+// 	fmt.Printf(" Commit Message: %-20s\n Commit Id: %s\n CommittedAt: %s\n", commit.CommitMsg, commit.Hash, commit.CommittedAt.Format("Jan 2, 2006, 3:04 PM"))
+//
+// 	logFile, err := os.OpenFile(".yogit/log/logs", os.O_CREATE | os.O_RDWR | os.O_APPEND, 0777)
+// 	LogErr(err, "Error opening log file to record new commit")
+// 	defer logFile.Close()
+//
+// 	logger := log.New(logFile, "", 0)
+// 	logger.Printf("%-30s  %-30s  %-20s  %-40s %s\n",commit.Author, commit.Contact, hash.Id, message, time.Now().Format("Jan 2, 2006, 3:04 PM") ) 
+//
+// 	updateBranch(hash)
+//
+// 	fmt.Printf("\njust recorded your commit to ./.yogit/log/logs\n")
+// }
 
 func updateBranch(hash HashId) {
 	// Find what the current HEAD is pointing at
@@ -141,10 +146,12 @@ func updateBranch(hash HashId) {
 
 	fmt.Printf("updated your current branch with the your state, now the header knows where you are and your state\nN bytes written %d\n", n)
 }
-type Sha1Hash struct {
-	Hash string
-}
-func Add(file string) Sha1Hash{
+
+// this function is called  in StaginArea(), it serves as hashing and saving to the object store at blob level
+// so for every file, we get their hash and compressed content, and write their hash and name to the STAGE file 
+// the file writing is done in StagingArea()
+// the tree object is created by TreeObject() which basically does the same thing as Add() but its the index file itself
+func SaveToObject(file string) Sha1Hash{
 	fmt.Println("adding all files onto the staging area")
 	// write all current files to staging area : index, but for now, lets just add one
 	// open the file that wants to be saved
@@ -177,10 +184,8 @@ func Add(file string) Sha1Hash{
 	fmt.Println("hashed_content  --- ",hashId)
 	fmt.Println("name to store folder --- ",objectFolder)
 
-	fmt.Printf("\nFile compressed successfully...\n")
-
+	// fmt.Printf("\nFile compressed successfully...\n")
 	return Sha1Hash{Hash:hashId}
-
 }
 
 func StagingArea() {
@@ -197,20 +202,60 @@ func StagingArea() {
 			continue
 		} 
 
-
 		info, err := path.Info()
 		LogErr(err, "Error in getting file info")
 
-		hashId := Add(info.Name())
+		hashId := SaveToObject(info.Name())
 		_, errw := fmt.Fprintf(stage, "%04o %-20s %20s\n", info.Mode().Perm(), hashId, info.Name() )
 		LogErr(errw, "Error in writing to file")
 	}
-
 	fmt.Println("check ./yogit/stage")
 }
 
-// so inside git add, we need to 
-// Save(*computing hash, fileName) -> return hash, fileName
-// UpdateIndex(fileName, hash) // unless we are doing everything in one loop
-// f -> { saveFile::hash , writeIndex::fName, hash, permission}
+func SaveCommit(msg string) {
+	// save commit should create a commit data type reprsented by struct as 
+	// {Author string, Tree Sha1Hash}
+	// but before that the Sha1Hash is gotten from the SaveToObj() as it hashes this data and returns the hash
+	// we can find where it is based on this.
+	
+	fmt.Println("processing index file")
+	const INDEX_PATH = ".yogit/stage"
 
+	content, err := os.ReadFile(INDEX_PATH)
+	LogErr(err, "Error occured, could not find file specified")
+
+	treeHash := HasherFn(content)
+	hashId := treeHash.Hash
+	objectFolder := treeHash.Hash[:2]
+
+	saveAt := fmt.Sprintf(".yogit/objects/%s", objectFolder)
+	errM := os.Mkdir(saveAt, 0777)
+  LogErr(errM, "check Add()")
+	
+	treePath := fmt.Sprintf("%s/%s", saveAt, objectFolder[2:])
+	treeName := fmt.Sprintf("%s%s", treePath, hashId[2:])
+	fmt.Println(treeName)
+	tree, err := os.Create(treeName)
+	LogErr(err, "Error in making tree")
+	defer tree.Close()
+
+	byteReader := bytes.NewReader(content)
+	io.Copy(tree, byteReader)
+	
+	fmt.Println("hashed_content for tree is store at --- ",hashId)
+
+	// create a hash for commit data
+	commit := Commit{}
+	commit.Author = "archive@persona-mp3jpeg"
+	// commit.Id = 
+	commit.Contact = "<archive@persona-mp3>"
+	commit.Tree = treeHash
+	commit.CommitMsg = msg
+	commit.CommittedAt = time.Now()
+
+	// save commit as it is 
+	s := fmt.Sprintf("%v", commit)
+	commitHash := HasherFn([]byte(s))
+	// commit.Id = commitHash
+	SaveCommitToObj_u(commitHash, commit)
+}

@@ -1,0 +1,28 @@
+0644 jde902229126767962798213               go.mod
+0644 jde902229126767962798213              main.go
+0755 jde902229126767962798213            notes.txt
+0644 jde902229126767962798213            server.ts
+0644 jde902229126767962798213                 todo
+
+// so git everything here is going to 
+
+
+
+** git looks at this file
+** creates tree object with it. jde902229126767962798213 are the hashpointer locations
+-> ```git commit```
+** hashed the content inside,and compresses
+** commit {
+  name
+  author
+  tree -> currentSnapshot of index at time.Now()
+  time
+}
+
+So this commit is saved to the HEAD file in logs/HEAD, so when someone wants to look for a certain commit by hash, we can just hash the ones available inside the file, and if any one matches, we get the the pointer to the tree
+
+0644 {9423791f7258cfc43f705a2cbe81d92b1d6f16fa}               go.mod
+0644 {49818b394fb9f831558f004c7b983bda65d16c8f}              main.go
+0755 {0d6cf8dd0dac0708d6e0b1a7a91b6e8a611d1c17}            notes.txt
+0644 {13be3cecd789f76eaaf1669de9640fccb556bfe8}            server.ts
+0644 {cf1413ff44d5a4d12d871b032d9f7233c8698618}                 todo

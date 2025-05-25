@@ -10,7 +10,8 @@ func ReadCommandLine(args []string) {
 	cmds := len(args)
 
 	if cmds <= 1 {
-		fmt.Println("Print instruction manual or enter interactive mode?")
+		yogit.YoGit()
+		// fmt.Println("Print instruction manual or enter interactive mode?")
 		return
 	}
 
@@ -34,7 +35,7 @@ func ReadCommandLine(args []string) {
 	case cmds == 3: {
 		// fmt.Println("command line args has two arguments passed in")
 		if args[1] == "save" && args[2] != "" {
-			yogit.Commit(args[2])
+			yogit.CommitFunc(args[2])
 			return
 		}
 
@@ -49,7 +50,6 @@ func ReadCommandLine(args []string) {
 }
 
 func main() {
-	yogit.YoGit()
 	
 	ReadCommandLine(os.Args)
 }

@@ -5,13 +5,15 @@ import (
 	"log"
 	"os"
 	"crypto/sha1"
+	"strings"
 	"encoding/hex"
 )
 
 const (
 	OBJECT_PATH = ".yogit/objects"
+	BRANCH_PATH = ".yogit/refs/heads"
+	HEADER_PATH = ".yogit/HEADER"
 )
-
 
 func LogErr(err error, msg string) {
 	if err != nil {
@@ -45,9 +47,27 @@ func SaveCommitToObj_u(commitHash Sha1Hash, commit Commit) {
 	LogErr(err, "Error making commit file")
 	defer commitFile.Close()
 	commit.Id = commitHash
+	// commit.Parent = Parent
 
-	_, errW := fmt.Fprintf(commitFile, "author:%s  id:%s  message:%s tree:%s at:%s\n", commit.Author, commit.Id, commit.CommitMsg,commit.Tree, commit.CommittedAt.Format("Jan 2, 1990 3:04 PM"))
+	_, errW := fmt.Fprintf(commitFile, "parent:%s author:%s  commitHash:%s  commitMessage:%s tree:%s committedAt:%s\n", 
+													commit.Parent.Hash, commit.Author, commit.Id.Hash, commit.CommitMsg,
+													commit.Tree.Hash, commit.CommittedAt.Format("Jan 2, 1990 3:04 PM"))
+
 	LogErr(errW, "Error writing to commit file")
 
 	fmt.Printf("successfully wrote commit to file at %s | %s\n", folderName, fileName)
+}
+
+
+func GetParentCommit_u() Sha1Hash{
+	// we basically just want to get the previous commit 
+	HEAD, err := os.ReadFile(HEADER_PATH)	
+	LogErr(err, "Error finding HEAD in SaveCommit()")
+	_, activeBranch, _ := strings.Cut(string(HEAD), ":")
+
+	pathTo := fmt.Sprintf(".yogit/%s", activeBranch)
+	prevCommitHash, err := os.ReadFile(pathTo)
+	LogErr(err, "Error finding active branch in SaveCommit()")
+
+	return Sha1Hash{Hash: string(prevCommitHash)}
 }

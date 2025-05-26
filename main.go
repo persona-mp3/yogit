@@ -37,6 +37,10 @@ func ReadCommandLine(args []string) {
 			yogit.StagingArea()
 			return
 		}
+
+		if args[1] == "ntimeline" && args[2] != "" {
+			yogit.NewTimeLine(args[2])
+		}
 		return
 	}
 

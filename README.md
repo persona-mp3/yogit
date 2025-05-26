@@ -55,7 +55,7 @@ To check if it was successfully installed, run this:
 
 
 Then to run the main file:
-```go run git.go```
+```go run main.go```
 
 
 

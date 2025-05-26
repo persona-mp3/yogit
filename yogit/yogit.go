@@ -10,10 +10,11 @@ import (
 	"io"
 	"bytes"
 	"crypto/sha1"
+	"log"
 )
 
 type Commit struct {
-	// Parent *HashId `json:"parent"`
+	Parent Sha1Hash `json:"parent"`
 	Id Sha1Hash `json:"hashId"`
 	Tree Sha1Hash `json:"tree"`
 	Author string `json:"author"`
@@ -34,6 +35,10 @@ func YoGit() {
 	fmt.Println("WELCOME TO YOGIT")
 }
 
+const (
+	LOG_PATH = ".yogit/log/logs"
+)
+
 func Init() {
 	fmt.Println("standback, making folders")
 	// use an input package to set the global variables
@@ -41,8 +46,9 @@ func Init() {
 	LogErr(err, "Error in making yogit folders")
 
 	subFolders := []string{"objects", "log", "refs"}
-	subFiles := []string{"index", "HEADER", "GLOBALS"}
+	subFiles := []string{"stage", "HEADER", "GLOBALS"}
 	logSubFiles := []string{"logs"}
+	// logSubFolders := []string{"refs"}
 	refSubFolders := []string{"heads", "tags"}
 
 	for _, folder := range subFolders {
@@ -69,6 +75,7 @@ func Init() {
 		LogErr(err, "Error in making refSubFolders")
 	}
 
+
 	// make master branch by defualt and write it to the HEADER in .yogit
 	master, err := os.Create(".yogit/refs/heads/master")
 	LogErr(err, "Error in making master branch in heads")
@@ -86,7 +93,7 @@ func Init() {
 	fmt.Printf("So the magic that just happend is that key folders in this directory ./.yogit\n")
 }
 
-func updateBranch(hash HashId) {
+func updateBranch(hash Sha1Hash) {
 	// Find what the current HEAD is pointing at
 	header, err := os.ReadFile(".yogit/HEADER")
 	LogErr(err, "Error in reading HEADER")
@@ -99,51 +106,20 @@ func updateBranch(hash HashId) {
 	LogErr(err, "Error in finding the active branch")
 	defer branch.Close()
 
-	n, err := branch.Write([]byte(hash.Id))
+	n, err := branch.Write([]byte(hash.Hash))
 	LogErr(err, "Error in updating branch")
 
 	fmt.Printf("updated your current branch with the your state, now the header knows where you are and your state\nN bytes written %d\n", n)
 }
 
-// this function is called  in StaginArea(), it serves as hashing and saving to the object store at blob level
-// so for every file, we get their hash and compressed content, and write their hash and name to the STAGE file 
-// the file writing is done in StagingArea()
-// the tree object is created by TreeObject() which basically does the same thing as Add() but its the index file itself
-func SaveToObject(file string) Sha1Hash{
-	fmt.Println("adding all files onto the staging area")
-	// write all current files to staging area : index, but for now, lets just add one
-	// open the file that wants to be saved
+func updateLog(c Commit) {
+	logFile, err := os.OpenFile(LOG_PATH, os.O_CREATE | os.O_RDWR | os.O_APPEND, 0777)
+	LogErr(err, "Error opening log file: updateLog()")
+	defer logFile.Close()
 
-	content, err := os.ReadFile(file)
-	LogErr(err, "Error occured, could not find file specified")
-	// hash the content, get the first 2 names
-	hasher := sha1.New() 
-	hasher.Write([]byte(content))
-	hashedContent := hasher.Sum(nil)
-	hashId := hex.EncodeToString(hashedContent)
-	objectFolder := hashId[:2]
-
-	saveAt := fmt.Sprintf(".yogit/objects/%s", objectFolder)
-	errM := os.Mkdir(saveAt, 0777)
-  LogErr(errM, "check Add()")
-	
-	blobPath := fmt.Sprintf("%s/%s", saveAt, objectFolder[2:])
-	blobName := fmt.Sprintf("%s%s", blobPath, hashId[2:])
-	fmt.Println(blobName)
-	blob, err := os.Create(blobName)
-	LogErr(err, "Error in making blob")
-
-	// gzipWriter := gzip.NewWriter(blob)
-	// gzipWriter.Write(content)
-	// gzipWriter.Close()
-	byteReader := bytes.NewReader(content)
-	io.Copy(blob, byteReader)
-	
-	fmt.Println("hashed_content  --- ",hashId)
-	fmt.Println("name to store folder --- ",objectFolder)
-
-	// fmt.Printf("\nFile compressed successfully...\n")
-	return Sha1Hash{Hash:hashId}
+	fmtC:= fmt.Sprintf( "author:%s  id:%s  message:%s tree:%s at:%s\n", c.Author, c.Id.Hash, c.CommitMsg, c.Tree.Hash, c.CommittedAt.Format("Jan 2, 1990 3:04 PM"))
+	logger := log.New(logFile, "", 0)
+	logger.Println(fmtC)
 }
 
 func StagingArea() {
@@ -170,12 +146,44 @@ func StagingArea() {
 	fmt.Println("check ./yogit/stage")
 }
 
-func SaveCommit(msg string) {
-	// save commit should create a commit data type reprsented by struct as 
-	// {Author string, Tree Sha1Hash}
-	// but before that the Sha1Hash is gotten from the SaveToObj() as it hashes this data and returns the hash
-	// we can find where it is based on this.
+// this function is called  in StaginArea(), it serves as hashing and saving to the object store at blob level
+// so for every file, we get their hash and compressed content, and write their hash and name to the STAGE file 
+// the file writing is done in StagingArea()
+// the tree object is created by TreeObject() which basically does the same thing as Add() but its the index file itself
+func SaveToObject(file string) Sha1Hash{
+	fmt.Println("adding all files onto the staging area")
+
+	content, err := os.ReadFile(file)
+	LogErr(err, "Error occured, could not find file specified")
+	// hash the content, get the first 2 names
+	hasher := sha1.New() 
+	hasher.Write([]byte(content))
+	hashedContent := hasher.Sum(nil)
+	hashId := hex.EncodeToString(hashedContent)
+	objectFolder := hashId[:2]
+
+	saveAt := fmt.Sprintf(".yogit/objects/%s", objectFolder)
+	errM := os.Mkdir(saveAt, 0777)
+  LogErr(errM, "check Add()")
 	
+	blobPath := fmt.Sprintf("%s/%s", saveAt, objectFolder[2:])
+	blobName := fmt.Sprintf("%s%s", blobPath, hashId[2:])
+	// fmt.Println(blobName)
+	blob, err := os.Create(blobName)
+	LogErr(err, "Error in making blob")
+
+	// gzipWriter := gzip.NewWriter(blob)
+	// gzipWriter.Write(content)
+	// gzipWriter.Close()
+	byteReader := bytes.NewReader(content)
+	io.Copy(blob, byteReader)
+	
+	fmt.Printf("%s saved at %s\n", file,  hashId)
+
+	return Sha1Hash{Hash:hashId}
+}
+
+func SaveCommit(msg string) {
 	fmt.Println("processing index file")
 	const INDEX_PATH = ".yogit/stage"
 
@@ -214,6 +222,47 @@ func SaveCommit(msg string) {
 	// save commit as it is 
 	s := fmt.Sprintf("%v", commit)
 	commitHash := HasherFn([]byte(s))
-	// commit.Id = commitHash
+	// we basically just want to get the previous commit 
+	HEAD, err := os.ReadFile(HEADER_PATH)	
+	LogErr(err, "Error finding HEAD in SaveCommit()")
+	_, activeBranch, _ := strings.Cut(string(HEAD), ":")
+
+	pathTo := fmt.Sprintf(".yogit/%s", activeBranch)
+	prevCommitHash, err := os.ReadFile(pathTo)
+	LogErr(err, "Error finding active branch in SaveCommit()")
+	
+	parent := Sha1Hash {
+		Hash: string(prevCommitHash),
+	}
+
+	commit.Parent = parent
 	SaveCommitToObj_u(commitHash, commit)
+
+	updateBranch(commitHash)
+	commit.Id = commitHash
+	updateLog(commit)
+}
+
+func NewTimeLine(timeLine string) {
+	parent := GetParentCommit_u()
+	HEAD, err := os.OpenFile(HEADER_PATH, os.O_RDWR, 0777)
+	if err != nil {
+		fmt.Println("HEAD FILE NOT FOUND IN", HEADER_PATH)
+		panic(err)
+	}
+	defer HEAD.Close()
+	
+	refs := fmt.Sprintf("ref:refs/heads/%s", timeLine)
+	HEAD.Truncate(0)
+	HEAD.Write([]byte(refs))
+	newTimeLine := fmt.Sprintf("%s/%s", BRANCH_PATH, timeLine)
+
+	
+	newBranch, err := os.OpenFile(newTimeLine, os.O_CREATE | os.O_RDWR, 0777)
+	LogErr(err, "Error creating new timeline in NewTimeLine()")
+	defer newBranch.Close()
+
+	newBranch.Write([]byte(parent.Hash))
+	fmt.Printf("new timeline made, have fun in %s", timeLine)
+
 }

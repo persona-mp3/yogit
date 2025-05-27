@@ -129,7 +129,7 @@ func StagingArea() {
 	dirEntries, err := os.ReadDir(".")
 	LogErr(err, "Error in reading StagingArea(), reading directory")
 
-	stage, err := os.OpenFile(".yogit/stage", os.O_CREATE | os.O_APPEND | os.O_RDWR, 0777)
+	stage, err := os.OpenFile(".yogit/stage", os.O_CREATE | os.O_TRUNC | os.O_RDWR, 0777)
 	LogErr(err, "Error in opening stage file")
 	defer stage.Close()
 

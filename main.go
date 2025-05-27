@@ -41,6 +41,11 @@ func ReadCommandLine(args []string) {
 		if args[1] == "ntimeline" && args[2] != "" {
 			yogit.NewTimeLine(args[2])
 		}
+
+		if args[1] == "travelto" && args[2] != "" {
+			yogit.TravelTo(args[2])
+		}
+		
 		return
 	}
 

@@ -11,6 +11,8 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"log"
+	"bufio"
+	
 )
 
 type Commit struct {
@@ -265,4 +267,87 @@ func NewTimeLine(timeLine string) {
 	newBranch.Write([]byte(parent.Hash))
 	fmt.Printf("new timeline made, have fun in %s", timeLine)
 
+}
+
+
+type State struct {
+	Perm string
+	Sha1Id string
+	File string
+}
+// we coud basically check for all the files in the current directory firstly
+// and then if they exist, we go look for their hash and content 
+// overwrite the current state with the content from the object by trunc && copying
+// and for files that dont exist, we can just remake them according to Perm
+
+func TravelTo(hash string) {
+	s := time.Now()
+	// go to object path to look for the first two letters of the hash passed in 
+	folderName := hash[:2]
+	fileName := hash[2:]
+	fmt.Println("locating multiverse for commt....")
+	commitLocation := fmt.Sprintf("%s/%s/%s", OBJECT_PATH, folderName, fileName)
+	content, err := os.ReadFile(commitLocation)
+	LogErr(err, "Error in getting commit in multiverse, TravelTo()")
+
+	fmt.Println("here is the file state from the past")
+	_, treeInfo, _ := strings.Cut(string(content), "tree:{")
+	fmt.Printf("\nthis is da tree Id -> %s\n", treeInfo[:40])
+
+	treeHash := treeInfo[:40]
+	fmt.Println("locating stage area as that then...")
+	
+	treeFolder := treeHash[:2] 
+	treeName := treeHash[2:]
+	treePath := fmt.Sprintf("%s/%s/%s", OBJECT_PATH, treeFolder, treeName) 
+
+	dirSnapshot, err := os.OpenFile(treePath, os.O_RDONLY, 0)
+	LogErr(err, "Error in getting directorySnapshot, TravelTo()")
+	defer dirSnapshot.Close()
+
+	// fmt.Printf("\nDirectory snapshot to be read into struct -> \n%s\n", string(dirSnapshot))
+	d := time.Since(s)
+	fmt.Printf("function took %s to execute\n", d)
+
+	scanner := bufio.NewScanner(dirSnapshot)
+
+	for scanner.Scan() {
+		state := State{}
+		line := scanner.Text()
+		fmt.Println(line)
+		// the file returns content stoed as 0664  {40digithash} %20sfileName
+		perm, content, _ := strings.Cut(line, "{")
+		fileHash, fileName, _ := strings.Cut(content, "}")
+
+		state.Perm = perm
+		state.File = strings.TrimSpace(fileName)
+		state.Sha1Id = fileHash
+		
+		fmt.Printf("add to struct for this line %s | %s | %s->\n", perm,  fileHash, strings.TrimSpace(fileName))
+
+		BuildState(state)
+	}
+}
+
+
+func BuildState(state State) {
+	// just regular file path build up 
+	folderLocation := state.Sha1Id[:2]
+	fileHash := state.Sha1Id[2:]
+
+	pathToF := fmt.Sprintf("%s/%s/%s", OBJECT_PATH, folderLocation, fileHash)
+	
+	snapshot, err := os.Open(pathToF)
+	LogErr(err, "Error in opening snapshot file, BuildState")
+	defer snapshot.Close()
+
+
+	// tame to open file in current directory
+	dst, err := os.OpenFile(state.File, os.O_CREATE | os.O_TRUNC, 0)
+	LogErr(err, "Error in opening file in current directory, BuildState()")
+	defer dst.Close()
+
+	io.Copy(dst, snapshot)
+
+	fmt.Printf("done copying prev state -> %s-> to %s\n ", state.Sha1Id, state.File)
 }

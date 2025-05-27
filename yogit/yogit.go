@@ -164,20 +164,34 @@ func SaveToObject(file string) Sha1Hash{
 	hashId := hex.EncodeToString(hashedContent)
 	objectFolder := hashId[:2]
 
+	byteReader := bytes.NewReader(content)
+
+	// check if saveAt already exists, if it exisit just save the file ther
 	saveAt := fmt.Sprintf(".yogit/objects/%s", objectFolder)
 	errM := os.Mkdir(saveAt, 0777)
+	if os.IsExist(errM) {
+		fmt.Printf("folder already exists, sharding into -> %s | %s\n", errM, hashId)
+
+		blobPath := fmt.Sprintf("%s/%s", saveAt, hashId[2:])
+		blob, err := os.Create(blobPath)
+		LogErr(err, "Error in creating blob file in os.IsExist(err)")
+		io.Copy(blob, byteReader)
+
+		return Sha1Hash{Hash: hashId}
+	}
+
+	
   LogErr(errM, "check Add()")
 	
 	blobPath := fmt.Sprintf("%s/%s", saveAt, objectFolder[2:])
 	blobName := fmt.Sprintf("%s%s", blobPath, hashId[2:])
-	// fmt.Println(blobName)
+	fmt.Println("the line you were sus about -> ", blobName)
 	blob, err := os.Create(blobName)
 	LogErr(err, "Error in making blob")
 
 	// gzipWriter := gzip.NewWriter(blob)
 	// gzipWriter.Write(content)
 	// gzipWriter.Close()
-	byteReader := bytes.NewReader(content)
 	io.Copy(blob, byteReader)
 	
 	fmt.Printf("%s saved at %s\n", file,  hashId)

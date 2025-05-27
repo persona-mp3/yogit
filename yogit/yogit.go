@@ -12,6 +12,7 @@ import (
 	"crypto/sha1"
 	"log"
 	"bufio"
+	"github.com/aquasecurity/table"
 	
 )
 
@@ -39,6 +40,8 @@ func YoGit() {
 
 const (
 	LOG_PATH = ".yogit/log/logs"
+	LOG_REFS_PATH = ".yogit/log"
+	REFS_HEADS = ".yogit/refs/heads"
 )
 
 func Init() {
@@ -75,6 +78,17 @@ func Init() {
 		path := fmt.Sprintf(".yogit/refs/%s", ref)
 		err := os.Mkdir(path, 0777)
 		LogErr(err, "Error in making refSubFolders")
+	}
+
+	// create refs folder inside log
+	errL := os.Mkdir(".yogit/log/refs", 0777)
+	LogErr(errL, "Error making refs as sub_folder in .yogit/log/refs, Init()")
+
+	for _, logSubFolder := range refSubFolders {
+		path := fmt.Sprintf(".yogit/log/refs/%s", logSubFolder)
+		err := os.Mkdir(path, 0777)
+		LogErr(err, "Error in making logSubFolder")
+
 	}
 
 
@@ -122,6 +136,20 @@ func updateLog(c Commit) {
 	fmtC:= fmt.Sprintf( "author:%s  id:%s  message:%s tree:%s at:%s\n", c.Author, c.Id.Hash, c.CommitMsg, c.Tree.Hash, c.CommittedAt.Format("Jan 2, 1990 3:04 PM"))
 	logger := log.New(logFile, "", 0)
 	logger.Println(fmtC)
+
+	// so when we are updating a log, we want to log it to the current branch the person is also on 
+	HEAD, err := os.ReadFile(HEADER_PATH)
+	LogErr(err, "Error opening HEAD, See: updateLog()")
+	_, currBranch, _ := strings.Cut(string(HEAD), ":")
+
+	logBranchPath := fmt.Sprintf("%s/%s", LOG_REFS_PATH, currBranch)
+	logBranch, err := os.OpenFile(logBranchPath, os.O_CREATE | os.O_APPEND | os.O_RDWR, 0777)
+	LogErr(err, "Error in opening branch path, see updateLog()")
+	defer logBranch.Close()
+
+	logBranch.Write([]byte(fmtC))
+	fmt.Println("writing current commit to current branch in logs")
+
 }
 
 func StagingArea() {
@@ -364,4 +392,37 @@ func BuildState(state State) {
 	io.Copy(dst, snapshot)
 
 	fmt.Printf("done copying prev state -> %s-> to %s\n ", state.Sha1Id, state.File)
+}
+
+
+// switchTo old branch
+// check if file exists in refs/heads and then read the commit hash
+// locate the hash in object store and build from there 
+func SwitchTo(branch string) {
+	currBranch, err:= os.ReadFile(HEADER_PATH)
+
+	_,currBName, _ := strings.Cut(string(currBranch), "heads/")
+
+	if currBName == branch {
+		fmt.Printf("Already on current branch specified -> %s %s\n", string(currBranch), currBName)
+		return
+	}
+
+	path := fmt.Sprintf("%s/%s", REFS_HEADS, branch)
+	latestCommit, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		fmt.Printf("Could not find branch specified with -> %s, try creating one first\n", branch)
+		return
+	}else if err != nil {
+		LogErr(err, "An error occured, SwitchTo()")
+	}
+
+	fmt.Printf("latest commit is read from %s is %s", branch, string(latestCommit))
+	TravelTo(string(latestCommit))
+}
+
+func SeeLogs() {
+	tbl := table.New(os.Stdout)
+	fmt.Println("logs ->", tbl)
+
 }

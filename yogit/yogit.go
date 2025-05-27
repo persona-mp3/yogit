@@ -291,7 +291,7 @@ func TravelTo(hash string) {
 	LogErr(err, "Error in getting commit in multiverse, TravelTo()")
 
 	fmt.Println("here is the file state from the past")
-	_, treeInfo, _ := strings.Cut(string(content), "tree:{")
+	_, treeInfo, _ := strings.Cut(string(content), "tree:")
 	fmt.Printf("\nthis is da tree Id -> %s\n", treeInfo[:40])
 
 	treeHash := treeInfo[:40]
@@ -343,7 +343,7 @@ func BuildState(state State) {
 
 
 	// tame to open file in current directory
-	dst, err := os.OpenFile(state.File, os.O_CREATE | os.O_TRUNC, 0)
+	dst, err := os.OpenFile(state.File, os.O_CREATE | os.O_TRUNC | os.O_RDWR, 0777)
 	LogErr(err, "Error in opening file in current directory, BuildState()")
 	defer dst.Close()
 

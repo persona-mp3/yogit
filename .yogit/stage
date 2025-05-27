@@ -1,0 +1,7 @@
+0644 {f3a139c0f447896f95b8b367540c280cfc7a1242}           .gitignore
+0644 {5a8bed5edcf0e7567a28f826480c16c6481156ea}            README.md
+0644 {9423791f7258cfc43f705a2cbe81d92b1d6f16fa}               go.mod
+0644 {7b22e8612a09d84ef541755e7c44627d68458109}          image-1.png
+0644 {3cd3c4ee866346584d4ff05b2d01ba3cc2ead822}            image.png
+0644 {f7aa6227a565b42ee43e5a2cb1f41b9e93e6f5fb}              main.go
+0755 {0d6cf8dd0dac0708d6e0b1a7a91b6e8a611d1c17}            notes.txt

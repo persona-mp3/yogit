@@ -1,62 +1,56 @@
-With this project, I'm recreating the architecture of GIT taking into account the underlying structure of commits, sanpshot, branches and other features 
+# yogit
+
+The main intention of yogit was for two things:
+1. Learn Golang 
+2. While learning Go, to build something.
+3. Git. Why Git? I use it almost everyday, might as well try and actually understand it.
+
+This is was pratically doubling two things at the same time: Learing Golang and rebuiling Git. The previous project can be found at [ remodelled ](https://github.com/persona-mp3/remodelled_v.git). There I explain major innerworkings of how Git works like is Data structure using a Directed Acyclic Graph, zlib compression, concepts of pointers and branches, basically like a time machine. I also made used of visual diagrams to actually make the learning nice
+
+But this is a practical version for the whole project, although the scope has changed to help people understand Git better and the commandline better, this is where I will stop for now.
+
+## Basic Commands
+```yogit init``` 
+
+This basically makes a new .yogit folder in your current working directory
+![alt text](image-2.png)
+
+### See main.go for basic commands,
+
+![alt text](image-3.png)
 
 
 
-#Key Concepts
-- Directed Acyclic Graphs: Git uses this data structure as the relationships between different commits. Each commit points to a previous commit as a parent for easy backtracking. With this feature, no cycles are formed in this data structure.
+```yogit add .```
 
-![alt text](image.png)
+This basically adds all files in the current directory to staging area just like how git does
 
+![alt text](image-4.png)
 
-- Branches: Branches are pointers to a specific line of commits. A branch points to the latest commit in a sequence. For example, Master will point to the 5th commit in its "timeline" and a new branch "dev" will only point to commits in it's time line.
-
-An analogy would be like, a Green Drone (##master) will only watch what happens in the Section1 (#commits) , while the Red Drone (##dev) will only watch what happens in Section2. But Section1 && Section2 share a common wall, to be more specific, Section2 will always point to Section1s latest change, still adhering to the DAG Model.
+The logs are basically suppose to make the user whats going on whenver they run certain commands and not look at it like magic, and that is why I left the files uncompressed, as at the moment.
 
 
-- Commits: Commits are basically objects that store details about a particular project in time. Think about it like this
+```yogit save "message goes in here" ``` 
 
-    ```go
-    type Commit struct {
-        Author string
-        CommitMsg string
-        HashId string
-        Parent *HashId
-        Snapshot *Tree
-        CommitedAt time.Time
-    }
-    ```
-
-Where the Tree is a compressed and hashed version of the current state of the working folder , files and it's content where all its content are comperessed into a hashcode. The Parent is the HashId of the previous Commit. In a case where that commit is the first, it will just reference itself.
-
-
-In Typescript, think about making a type of object that has this properties
-
-    ```js
-    interface Commit {
-        Author: string,
-        CommitMsg: string,
-        HashId: string | number
-    }
-    ```
-
-These are however just simplified versions of what the Commit object look like but is abstracted enough to get a general overview.
-
-
-- Git Database: Git stores all these commits and their content in key value pairs, where the key is the ##HashId of the Commit, and the Value is it's metadata. 
-
-![alt text](image-1.png)
-
-
-This is written in Go as if you would need to run the code, you would need to ensure that you have the compiler installed on your device at the their website. 
-
-To check if it was successfully installed, run this:
-
-```go --version``
-
-
-Then to run the main file:
-```go run main.go```
+To save a commit, just like ```git commit -m "inital commit"``` 
+![alt text](image-5.png)
 
 
 
-As of the moment, I've not started using Go's memory management to convert it into a proper CLI Interface, but currently working on the architecture. This is my first attempt at Go and building this project  will esentially teach me Go's Basics at least, and then maybe try the behemoth, C
+
+### Other features 
+1. Checkout
+2. Switching branches
+3. Logging
+
+
+
+
+
+# FUTURE IMPROVEMENTS
+
+As stated with scope above, as most people are new to the command line like I am, I also plan on adding a nice terminal user interface, as seen below
+
+![alt text](image-6.png)
+
+Other major integrations that I would like to include is actually helping with the merge conflicts as most people said its hard to understand.

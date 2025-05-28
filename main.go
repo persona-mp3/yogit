@@ -22,6 +22,11 @@ func ReadCommandLine(args []string) {
 			yogit.Init()
 			return
 		}
+
+		if args[1] == "logs" {
+			yogit.SeeLogs()
+			return
+		}
 		return
 	}
 
@@ -44,6 +49,10 @@ func ReadCommandLine(args []string) {
 
 		if args[1] == "travelto" && args[2] != "" {
 			yogit.TravelTo(args[2])
+		}
+
+		if args[1] == "switchto" && args[2] != "" {
+			yogit.SwitchTo(args[2])
 		}
 		
 		return

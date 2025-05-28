@@ -18,12 +18,9 @@ This basically makes a new .yogit folder in your current working directory
 ### See main.go for basic commands,
 
 ![alt text](image-3.png)
->>>>>>> b7e9edc693b6b9be762eef9b266e131aa75446f9
 
 # yogit
 
-<<<<<<< HEAD
-=======
 
 ```yogit add .```
 

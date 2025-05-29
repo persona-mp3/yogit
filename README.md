@@ -5,7 +5,7 @@ The main intention of yogit was for two things:
 2. While learning Go, to build something.
 3. Git. Why Git? I use it almost everyday, might as well try and actually understand it.
 
-This is was pratically doubling two things at the same time: Learing Golang and rebuiling Git. The previous project can be found at [ remodelled ](https://github.com/persona-mp3/remodelled_v.git). There I explain major innerworkings of how Git works like is Data structure using a Directed Acyclic Graph, zlib compression, concepts of pointers and branches, basically like a time machine. I also made used of visual diagrams to actually make the learning nice
+This is was pratically doubling two things at the same time: Learing Golang and rebuiling Git. The previous project can be found at [ ***git_project*** ](https://github.com/persona-mp3/git_project.git). There I explain major innerworkings of how Git works like is Data structure using a Directed Acyclic Graph, zlib compression, concepts of pointers and branches, basically like a time machine. I also made used of visual diagrams to actually make the learning nice
 
 But this is a practical version for the whole project, although the scope has changed to help people understand Git better and the commandline better, this is where I will stop for now.
 

@@ -101,12 +101,11 @@ func Init() {
 	LogErr(err, "Error in finding HEADER")
 	defer header.Close()
 
-	n, err := fmt.Fprintf(header, "ref:refs/heads/master")
-	LogErr(err, "Error in making default write to header")
-	fmt.Printf("number of bytes written to HEADER -> %d", n)
+	_, er := fmt.Fprintf(header, "ref:refs/heads/master")
+	LogErr(er, "Error in making default write to header")
 
 	fmt.Println("DONE")
-	fmt.Printf("So the magic that just happend is that key folders in this directory ./.yogit\n")
+	fmt.Printf("initialised a new .yogit folder in current working directory")
 }
 
 func updateBranch(hash Sha1Hash) {
@@ -122,10 +121,10 @@ func updateBranch(hash Sha1Hash) {
 	LogErr(err, "Error in finding the active branch")
 	defer branch.Close()
 
-	n, err := branch.Write([]byte(hash.Hash))
-	LogErr(err, "Error in updating branch")
+	_, er := branch.Write([]byte(hash.Hash))
+	LogErr(er, "Error in updating branch")
 
-	fmt.Printf("updated your current branch with the your state, now the header knows where you are and your state\nN bytes written %d\n", n)
+	fmt.Printf("new commit stored, and updated at current branch")
 }
 
 func updateLog(c Commit) {
@@ -213,7 +212,6 @@ func SaveToObject(file string) Sha1Hash{
 	
 	blobPath := fmt.Sprintf("%s/%s", saveAt, objectFolder[2:])
 	blobName := fmt.Sprintf("%s%s", blobPath, hashId[2:])
-	fmt.Println("the line you were sus about -> ", blobName)
 	blob, err := os.Create(blobName)
 	LogErr(err, "Error in making blob")
 
@@ -228,7 +226,7 @@ func SaveToObject(file string) Sha1Hash{
 }
 
 func SaveCommit(msg string) {
-	fmt.Println("processing index file")
+	fmt.Println("\nprocessing index file\n")
 	const INDEX_PATH = ".yogit/stage"
 
 	content, err := os.ReadFile(INDEX_PATH)
@@ -252,7 +250,7 @@ func SaveCommit(msg string) {
 	byteReader := bytes.NewReader(content)
 	io.Copy(tree, byteReader)
 	
-	fmt.Println("hashed_content for tree is store at --- ",hashId)
+	// fmt.Println("hashed_content for tree is store at --- \n",hashId)
 
 	// create a hash for commit data
 	commit := Commit{}
@@ -287,6 +285,7 @@ func SaveCommit(msg string) {
 	updateLog(commit)
 }
 
+// this is the checkout functionality in git alias as ntimeline intead git checkout -b playground
 func NewTimeLine(timeLine string) {
 	parent := GetParentCommit_u()
 	HEAD, err := os.OpenFile(HEADER_PATH, os.O_RDWR, 0777)
@@ -323,21 +322,21 @@ type State struct {
 // and for files that dont exist, we can just remake them according to Perm
 
 func TravelTo(hash string) {
-	s := time.Now()
 	// go to object path to look for the first two letters of the hash passed in 
 	folderName := hash[:2]
 	fileName := hash[2:]
 	fmt.Println("locating multiverse for commt....")
+
 	commitLocation := fmt.Sprintf("%s/%s/%s", OBJECT_PATH, folderName, fileName)
 	content, err := os.ReadFile(commitLocation)
 	LogErr(err, "Error in getting commit in multiverse, TravelTo()")
 
 	fmt.Println("here is the file state from the past")
 	_, treeInfo, _ := strings.Cut(string(content), "tree:")
-	fmt.Printf("\nthis is da tree Id -> %s\n", treeInfo[:40])
+	fmt.Printf("\nthis is the tree Id -> %s\n", treeInfo[:40])
 
 	treeHash := treeInfo[:40]
-	fmt.Println("locating stage area as that then...")
+	fmt.Println("locating stage area as at then...")
 	
 	treeFolder := treeHash[:2] 
 	treeName := treeHash[2:]
@@ -348,8 +347,6 @@ func TravelTo(hash string) {
 	defer dirSnapshot.Close()
 
 	// fmt.Printf("\nDirectory snapshot to be read into struct -> \n%s\n", string(dirSnapshot))
-	d := time.Since(s)
-	fmt.Printf("function took %s to execute\n", d)
 
 	scanner := bufio.NewScanner(dirSnapshot)
 
@@ -365,7 +362,7 @@ func TravelTo(hash string) {
 		state.File = strings.TrimSpace(fileName)
 		state.Sha1Id = fileHash
 		
-		fmt.Printf("add to struct for this line %s | %s | %s->\n", perm,  fileHash, strings.TrimSpace(fileName))
+		// fmt.Printf("add to struct for this line %s | %s | %s->\n", perm,  fileHash, strings.TrimSpace(fileName))
 
 		BuildState(state)
 	}
@@ -398,6 +395,7 @@ func BuildState(state State) {
 // switchTo old branch
 // check if file exists in refs/heads and then read the commit hash
 // locate the hash in object store and build from there 
+// goes to previous existing branch, similar with git checkout master
 func SwitchTo(branch string) {
 	currBranch, err:= os.ReadFile(HEADER_PATH)
 
@@ -417,7 +415,7 @@ func SwitchTo(branch string) {
 		LogErr(err, "An error occured, SwitchTo()")
 	}
 
-	fmt.Printf("latest commit is read from %s is %s", branch, string(latestCommit))
+	fmt.Printf("latest commit read from %s is %s", branch, string(latestCommit))
 	TravelTo(string(latestCommit))
 }
 

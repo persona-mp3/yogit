@@ -40,7 +40,7 @@ yogit init
 // this creates a .yogit folder in the current working directory just like .git
 ``` 
 
-![alt text](image-2.png)
+![alt text](./docs/image-2.png)
 
 ### See main.go for basic commands,
 
@@ -67,7 +67,7 @@ yogit save "message goes in here"
 ``` 
 
 To save a commit, just like ```git commit -m "inital commit"``` 
-![alt text](image-5.png)
+![alt text](./docs/mage-5.png)
 
 
 

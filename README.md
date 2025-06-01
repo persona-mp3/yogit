@@ -40,7 +40,7 @@ yogit init
 // this creates a .yogit folder in the current working directory just like .git
 ``` 
 
-![alt text](./docs/image-2.png)
+![Alt text](./docs/image-2.png)
 
 ### See main.go for basic commands,
 
@@ -67,7 +67,7 @@ yogit save "message goes in here"
 ``` 
 
 To save a commit, just like ```git commit -m "inital commit"``` 
-![alt text](./docs/mage-5.png)
+![Alt text](./docs/image-5.png)
 
 
 
@@ -82,7 +82,7 @@ To save a commit, just like ```git commit -m "inital commit"```
 
 As stated with scope above, as most people are new to the command line like I am, I also plan on adding a nice terminal user interface, as seen below
 
-![alt text](image-6.png)
+![Alt text](./docs/image-6.png)
 
 Other major integrations that I would like to include is actually helping with the merge conflicts as most people said its hard to understand.
 

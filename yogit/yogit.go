@@ -452,17 +452,17 @@ func CheckLogs() {
 	scanner := bufio.NewScanner(logs)
 	for scanner.Scan() {
 		line := scanner.Text()
-		_, hashId, _ := strings.Cut(line, "id:{")
-		hash, _,  _ := strings.Cut(hashId, "}")
-		_, msgSlice, _ := strings.Cut(hashId, "message:")
+		fmt.Println(line)
+		_, hashId, _ := strings.Cut(line, "id:")
+		id, msgSlice, _ := strings.Cut(hashId, "message:")
 		_, time, _ := strings.Cut(hashId, "at:")
 
 		msg, _, _ := strings.Cut(msgSlice, "tree")
 		fmt.Println(msg)
 
-		h := tml.Sprintf("<yellow>%s</yellow>", hash)
-		// m := tml.Sprintf("<green>%s</green>", msg)
-		tbl.AddRow(h, msg, time)
+		h := tml.Sprintf("<yellow>%s</yellow>", id)
+		m := tml.Sprintf("<green>%s</green>", msg)
+		tbl.AddRow(h, m, time)
 	}
 
 

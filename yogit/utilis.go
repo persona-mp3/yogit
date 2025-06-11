@@ -57,7 +57,6 @@ func SaveCommitToObj_u(commitHash Sha1Hash, commit Commit) {
 
 	LogErr(errW, "Error writing to commit file")
 
-	fmt.Printf("successfully wrote commit to file at %s | %s\n", folderName, fileName)
 }
 
 

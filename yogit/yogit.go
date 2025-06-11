@@ -2,18 +2,20 @@ package yogit
 
 import (
 	// "compress/gzip"
+	"bufio"
+	"bytes"
+	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"strings"
 	"time"
-	"io"
-	"bytes"
-	"crypto/sha1"
-	"log"
-	"bufio"
+
 	"github.com/aquasecurity/table"
 	"github.com/liamg/tml"
+	// "github.com/liamg/tml"
 )
 
 type Commit struct {
@@ -45,7 +47,7 @@ const (
 )
 
 func Init() {
-	fmt.Println("standback, making folders")
+	fmt.Println("Initialising yogit in current dir")
 	// use an input package to set the global variables
 	err := os.MkdirAll(".yogit", 0777)
 	LogErr(err, "Error in making yogit folders")
@@ -104,8 +106,7 @@ func Init() {
 	_, er := fmt.Fprintf(header, "ref:refs/heads/master")
 	LogErr(er, "Error in making default write to header")
 
-	fmt.Println("DONE")
-	fmt.Println("initialised a new .yogit folder in current working directory")
+	fmt.Println(tml.Sprintf("<green>Done initialising</green>\n"))
 }
 
 func updateBranch(hash Sha1Hash) {
@@ -124,7 +125,6 @@ func updateBranch(hash Sha1Hash) {
 	_, er := branch.Write([]byte(hash.Hash))
 	LogErr(er, "Error in updating branch")
 
-	fmt.Printf("new commit stored, and updated at current branch")
 }
 
 func updateLog(c Commit) {
@@ -147,7 +147,7 @@ func updateLog(c Commit) {
 	defer logBranch.Close()
 
 	logBranch.Write([]byte(fmtC))
-	fmt.Println("writing current commit to current branch in logs")
+	fmt.Println(tml.Sprintf("<green> -> New commit stored\n -> Branch Updated</green>\n"))
 
 }
 
@@ -172,7 +172,9 @@ func StagingArea() {
 		_, errw := fmt.Fprintf(stage, "%04o %-20s %20s\n", info.Mode().Perm(), hashId, info.Name() )
 		LogErr(errw, "Error in writing to file")
 	}
-	fmt.Println("check ./yogit/stage")
+	// fmt.Println("check ./yogit/stage")
+	fmt.Println(tml.Sprintf("\n  <yellow>---processing index file---</yellow>\n"))
+	fmt.Println(tml.Sprintf("  <green>all files ready for saving</green>\n"))
 }
 
 // this function is called  in StaginArea(), it serves as hashing and saving to the object store at blob level
@@ -220,13 +222,12 @@ func SaveToObject(file string) Sha1Hash{
 	// gzipWriter.Close()
 	io.Copy(blob, byteReader)
 	
-	fmt.Printf("%s saved at %s\n", file,  hashId)
+	// fmt.Printf("%s saved at %s\n", file,  hashId)
 
 	return Sha1Hash{Hash:hashId}
 }
 
 func SaveCommit(msg string) {
-	fmt.Println("\nprocessing index file\n")
 	const INDEX_PATH = ".yogit/stage"
 
 	content, err := os.ReadFile(INDEX_PATH)
@@ -342,18 +343,19 @@ func TravelTo(hash string) {
 	// go to object path to look for the first two letters of the hash passed in 
 	folderName := hash[:2]
 	fileName := hash[2:]
-	fmt.Println("locating multiverse for commt....")
+	fmt.Println(tml.Sprintf(" <yellow>  ---locating folders for commit--- </yellow>"))
 
 	commitLocation := fmt.Sprintf("%s/%s/%s", OBJECT_PATH, folderName, fileName)
 	content, err := os.ReadFile(commitLocation)
 	LogErr(err, "Error in getting commit in multiverse, TravelTo()")
 
-	fmt.Println("here is the file state from the past")
+	// fmt.Println("here is the file state from the past")
+	fmt.Println(tml.Sprintf(" <green> -> Commit found\n -> Changing directory state</green>"))
 	_, treeInfo, _ := strings.Cut(string(content), "tree:")
-	fmt.Printf("\nthis is the tree Id -> %s\n", treeInfo[:40])
+	// fmt.Printf("\nthis is the tree Id -> %s\n", treeInfo[:40])
 
 	treeHash := treeInfo[:40]
-	fmt.Println("locating stage area as at then...")
+	// fmt.Println("locating stage area as at then...")
 	
 	treeFolder := treeHash[:2] 
 	treeName := treeHash[2:]
@@ -405,7 +407,8 @@ func BuildState(state State) {
 
 	io.Copy(dst, snapshot)
 
-	fmt.Printf("done copying prev state -> %s-> to %s\n ", state.Sha1Id, state.File)
+	// fmt.Printf("done copying prev state -> %s-> to %s\n ", state.Sha1Id, state.File)
+	fmt.Println(tml.Sprintf(" <green> -> Working directory has been updated</green>"))
 }
 
 
@@ -415,6 +418,7 @@ func BuildState(state State) {
 // goes to previous existing branch, similar with git checkout master
 func SwitchTo(branch string) {
 	currBranch, err:= os.ReadFile(HEADER_PATH)
+	LogErr(err, "Error in reading HEADER, SwitchTo()")
 
 	_,currBName, _ := strings.Cut(string(currBranch), "heads/")
 
@@ -426,59 +430,39 @@ func SwitchTo(branch string) {
 	path := fmt.Sprintf("%s/%s", REFS_HEADS, branch)
 	latestCommit, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
-		fmt.Printf("Could not find branch specified with -> %s, try creating one first\n", branch)
+		// fmt.Printf("Could not find branch specified with -> %s, try creating one first\n", branch)
+		fmt.Println(tml.Sprintf(" <red> -> Could not find branch specified with -> %s, try creating one first\n</red>", branch))
 		return
 	}else if err != nil {
 		LogErr(err, "An error occured, SwitchTo()")
 	}
 
-	fmt.Printf("latest commit read from %s is %s", branch, string(latestCommit))
+	// fmt.Println(tml.Sprintf(" <yellow> ---Latest commit from %s </yellow>"))
+
+	// fmt.Printf("latest commit read from %s is %s", branch, string(latestCommit))
 	TravelTo(string(latestCommit))
-}
-
-func SeeLogs() {
-	// tbl := table.New(os.Stdout)
-	// fmt.Println("logs ->", tbl)
-
-	logs, err := os.Open(".yogit/log/logs")
-	if err != nil {
-		fmt.Println("error in opening log file")
-		log.Fatal(err)
-	}
-
-	buffer := make([]byte, 1024)
-	content, err := logs.Read(buffer)
-	LogErr(err, "Error in reading from buffer")
-
-	fmt.Println("content from log files")
-	fmt.Println(string(buffer[:content]))
 }
 
 func CheckLogs() {
 	tbl := table.New(os.Stdout)
 	tbl.SetHeaders("hashId", "commitMessage", "commitedAt")
-	tbl.SetPadding(6)
-	tbl.SetBorderTop(false)
-	tbl.SetBorderLeft(false)
-	tbl.SetBorderRight(false)
-	tbl.SetBorderBottom(false)
+	tbl.SetPadding(2)
 
 	logs, err := os.Open(".yogit/log/logs")
 	LogErr(err, "Error occured in opening log file, CheckLogs()")
+	defer logs.Close()
 
 	scanner := bufio.NewScanner(logs)
 	for scanner.Scan() {
 		line := scanner.Text()
+		fmt.Println(line)
 		_, hashId, _ := strings.Cut(line, "id:")
 		id, msgSlice, _ := strings.Cut(hashId, "message:")
 		_, time, _ := strings.Cut(hashId, "at:")
 		msg, _, _ := strings.Cut(msgSlice, "tree")
 
-		h := tml.Sprintf("<yellow>%s</yellow>", id)
-		m := tml.Sprintf("<green>%s</green>", msg)
-		tbl.AddRow(h, m, time)
+		tbl.AddRow(strings.TrimSpace(id), strings.TrimSpace(msg), strings.TrimSpace(time))
 	}
-
-
+	
 	tbl.Render()
 }

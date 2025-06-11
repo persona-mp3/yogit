@@ -23,8 +23,13 @@ func ReadCommandLine(args []string) {
 			return
 		}
 
-		if args[1] == "logs" {
-			yogit.SeeLogs()
+		// if args[1] == "logs" {
+		// 	yogit.Init()
+		// 	return
+		// }
+		
+		if args[1] == "clogs" {
+			yogit.CheckLogs()
 			return
 		}
 		return

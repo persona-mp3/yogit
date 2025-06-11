@@ -13,7 +13,7 @@ import (
 	"log"
 	"bufio"
 	"github.com/aquasecurity/table"
-	
+	"github.com/liamg/tml"
 )
 
 type Commit struct {
@@ -105,7 +105,7 @@ func Init() {
 	LogErr(er, "Error in making default write to header")
 
 	fmt.Println("DONE")
-	fmt.Printf("initialised a new .yogit folder in current working directory")
+	fmt.Println("initialised a new .yogit folder in current working directory")
 }
 
 func updateBranch(hash Sha1Hash) {
@@ -180,7 +180,7 @@ func StagingArea() {
 // the file writing is done in StagingArea()
 // the tree object is created by TreeObject() which basically does the same thing as Add() but its the index file itself
 func SaveToObject(file string) Sha1Hash{
-	fmt.Println("adding all files onto the staging area")
+	// fmt.Println("adding all files onto the staging area")
 
 	content, err := os.ReadFile(file)
 	LogErr(err, "Error occured, could not find file specified")
@@ -420,7 +420,51 @@ func SwitchTo(branch string) {
 }
 
 func SeeLogs() {
-	tbl := table.New(os.Stdout)
-	fmt.Println("logs ->", tbl)
+	// tbl := table.New(os.Stdout)
+	// fmt.Println("logs ->", tbl)
 
+	logs, err := os.Open(".yogit/log/logs")
+	if err != nil {
+		fmt.Println("error in opening log file")
+		log.Fatal(err)
+	}
+
+	buffer := make([]byte, 1024)
+	content, err := logs.Read(buffer)
+	LogErr(err, "Error in reading from buffer")
+
+	fmt.Println("content from log files")
+	fmt.Println(string(buffer[:content]))
+}
+
+func CheckLogs() {
+	tbl := table.New(os.Stdout)
+	tbl.SetHeaders("hashId", "commitMessage", "madeAt")
+	tbl.SetPadding(6)
+	tbl.SetBorderTop(false)
+	tbl.SetBorderLeft(false)
+	tbl.SetBorderRight(false)
+	tbl.SetBorderBottom(false)
+
+	logs, err := os.Open(".yogit/log/logs")
+	LogErr(err, "Error occured in opening log file, CheckLogs()")
+
+	scanner := bufio.NewScanner(logs)
+	for scanner.Scan() {
+		line := scanner.Text()
+		_, hashId, _ := strings.Cut(line, "id:{")
+		hash, _,  _ := strings.Cut(hashId, "}")
+		_, msgSlice, _ := strings.Cut(hashId, "message:")
+		_, time, _ := strings.Cut(hashId, "at:")
+
+		msg, _, _ := strings.Cut(msgSlice, "tree")
+		fmt.Println(msg)
+
+		h := tml.Sprintf("<yellow>%s</yellow>", hash)
+		// m := tml.Sprintf("<green>%s</green>", msg)
+		tbl.AddRow(h, msg, time)
+	}
+
+
+	tbl.Render()
 }

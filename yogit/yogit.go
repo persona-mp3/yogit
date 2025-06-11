@@ -238,7 +238,24 @@ func SaveCommit(msg string) {
 
 	saveAt := fmt.Sprintf(".yogit/objects/%s", objectFolder)
 	errM := os.Mkdir(saveAt, 0777)
-  LogErr(errM, "check Add()")
+
+	if os.IsExist(errM) {
+		// we want to save the commitObj inside that same folder, 
+		// commitPath := fmt.Sprintf("%s/%s")
+		fmt.Println("hash ->", hashId)
+		fmt.Println("sharding commit", saveAt)
+		fmt.Println("treeName ->", hashId[2:])
+		treePath := fmt.Sprintf("%s/%s", saveAt , hashId[2:])
+		tree, err := os.Create(treePath)
+		LogErr(err, "Error occured in SaveCommit(), sharding")
+		defer tree.Close()
+
+		byteReader := bytes.NewReader(content)
+		io.Copy(tree, byteReader)
+	}else {
+
+		LogErr(errM, "check Add()")
+	}
 	
 	treePath := fmt.Sprintf("%s/%s", saveAt, objectFolder[2:])
 	treeName := fmt.Sprintf("%s%s", treePath, hashId[2:])
@@ -439,7 +456,7 @@ func SeeLogs() {
 
 func CheckLogs() {
 	tbl := table.New(os.Stdout)
-	tbl.SetHeaders("hashId", "commitMessage", "madeAt")
+	tbl.SetHeaders("hashId", "commitMessage", "commitedAt")
 	tbl.SetPadding(6)
 	tbl.SetBorderTop(false)
 	tbl.SetBorderLeft(false)
@@ -452,13 +469,10 @@ func CheckLogs() {
 	scanner := bufio.NewScanner(logs)
 	for scanner.Scan() {
 		line := scanner.Text()
-		fmt.Println(line)
 		_, hashId, _ := strings.Cut(line, "id:")
 		id, msgSlice, _ := strings.Cut(hashId, "message:")
 		_, time, _ := strings.Cut(hashId, "at:")
-
 		msg, _, _ := strings.Cut(msgSlice, "tree")
-		fmt.Println(msg)
 
 		h := tml.Sprintf("<yellow>%s</yellow>", id)
 		m := tml.Sprintf("<green>%s</green>", msg)

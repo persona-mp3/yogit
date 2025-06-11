@@ -7,6 +7,7 @@ import (
 	"crypto/sha1"
 	"strings"
 	"encoding/hex"
+	"github.com/liamg/tml"
 )
 
 const (
@@ -17,7 +18,8 @@ const (
 
 func LogErr(err error, msg string) {
 	if err != nil {
-		fmt.Println("\n", msg)
+		yoErr := tml.Sprintf("Error: <red>%s</red>", msg)
+		fmt.Println(yoErr)
 		log.Fatal(err)
 	}
 }

@@ -444,7 +444,6 @@ func SwitchTo(branch string) {
 }
 
 func CheckLogs() {
-	fmt.Println("\nrendering logs\n")
 
 	tbl := table.New(os.Stdout)
 	tbl.SetHeaders("hashId", "commitMessage", "commitedAt")
@@ -457,7 +456,7 @@ func CheckLogs() {
 	scanner := bufio.NewScanner(logs)
 	for scanner.Scan() {
 		line := scanner.Text()
-		fmt.Println(line)
+		// fmt.Println(line)
 		_, hashId, _ := strings.Cut(line, "id:")
 		id, msgSlice, _ := strings.Cut(hashId, "message:")
 		_, time, _ := strings.Cut(hashId, "at:")

@@ -444,6 +444,8 @@ func SwitchTo(branch string) {
 }
 
 func CheckLogs() {
+	fmt.Println("\nrendering logs\n")
+
 	tbl := table.New(os.Stdout)
 	tbl.SetHeaders("hashId", "commitMessage", "commitedAt")
 	tbl.SetPadding(2)

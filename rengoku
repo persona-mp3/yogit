@@ -24,11 +24,7 @@ streaming over Python with files. This is how I think the Packet should be struc
 
                       ----------------------------------------------------
                           content_len + file_name + content
-                          4bytes + 1byte + file_name + content
                       ----------------------------------------------------
-
-  - The first 4bytes represent the size of the whole packet 
-  - The second represents the size of the file name, so read the next 1byte to get the file name 
 
 The content_len can still remain at 4 bytes, but more research will need to be done on making protocols 
 but more complex slicing will need to be done as Python does not really interface well with it or maybe 

@@ -1,59 +1,130 @@
+# import threading 
 import socket
-import threading 
-"""
-Threading module is used to handle concurrency in python. In socket programming 
-there are tons of blocking code that can inhibit "async" operations, if thats your speed.
-Python itself is single threaded, ie it can only run one task at a time, but the threading 
-module in python solves that by using actual OS-Level threads.
+import select
+import struct
+from typing import Sequence
+from utils.utils import file_handler
 
-Some blocking tasks in socket module include:
-    - listening for connections ie server.listen() and server.accept()
-    - reading from client ie server.recv() and server.sendmsg()
-"""
-
-
-HEADER = 64
+HEADER = 4
 FORMAT = "utf-8"
-DISCONNECT_MSG = "!DISCONNECTED"
-port = 5050
-# automatically get IP_ADDRESS of the running device
-SERVER = socket.gethostbyname(socket.gethostname())
-ADDR = (SERVER, port)
+ACK = "Acknowledge"
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind(ADDR)
+TYPE_DATA_TRANS = "Packet"
 
 
-def handle_client(conn: socket, addr: str):
-    print(f"[new_client] -> connected from {addr}")
+def create_server(port: int) -> None:
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-    connected = True
-    while connected:
-        msg_len = conn.recv(HEADER).decode(FORMAT)
-        
-        if len(msg_len) < 1:
-            print("client did not send anything")
-            break
+    # HOST_IP = socket.gethostbyname(socket.gethostname())
+    HOST_IP = "127.0.0.1"
+    ADDR = (HOST_IP, port)
 
-        msg_len = int(msg_len)
-        msg = conn.recv(msg_len).decode(FORMAT)
+    s.bind(ADDR)
+    s.listen(5)
 
-        if msg == "!DISCONNECTED":
-            connected = False
-        print(f"{addr} ->> {msg}")
-
-    conn.close()
-
-
-def start():
-    server.listen()
+    print(f"server crearted, acitive @ {ADDR}")
     while True:
-        conn, addr = server.accept()
-        thread = threading.Thread(target=handle_client, args=(conn, addr))
-        thread.start()
+        read_conns, _, _ = select.select([s], [], [], 1)
+        if read_conns:
+            for conns in read_conns:
+                conn, addr = conns.accept()
+                print(f"[new-client] -> @ {addr}")
+                try:
+                    handle_conn(conn)
+                except socket.error as e:
+                    print(f"An error occured in socket operation: {e}")
+                    continue
+                finally:
+                    conn.close()
 
-        print(f"[active_conns] -> {threading.active_count() - 1}")
+
+#  the function could return a string that describes the kind of request made by a client
+def recv_ack_header(c: socket) -> Sequence[str]:
+    content_len = b''
+    while len(content_len) < HEADER:
+        chunk = c.recv(HEADER - len(content_len))
+        content_len += chunk
+
+    content_len = struct.unpack("!I", content_len)[0]
+    print(f"content length of ack request: {content_len}")
+
+    content = b''
+    while len(content) < content_len:
+        chunk = c.recv(content_len - len(content))
+        content += chunk
+
+    print("\n\ndecoding header...\n\n") 
+
+    decoded_content = content.decode(FORMAT)
+    req_body = decoded_content.split()
+
+    if req_body[0] != ACK:        # return (req_body[0], req_body)
+        return 
+
+    print(f"Request-Type: {req_body[0]}")
+    print(f"Packets-to-recieve: {req_body[1]}")
+    print(f"Author: {req_body[2]}")
+    print(f"Client-start: {req_body[3]}")
+
+    Type = "Acknowledge \r\n"
+    Status = "Acknowledged \r\n"
+
+    encoded_response = Type.encode(FORMAT) + Status.encode(FORMAT)
+    c.sendall(encoded_response)
+    print()
+    n_packets = req_body[1]
+    author = req_body[2]
+    return (n_packets, author)
 
 
-print(f"[starting] -> server started at {SERVER}")
-start()
+def recv_content(c: socket, author: str) -> None:
+    content_len = b''
+    while len(content_len) < HEADER:
+        chunk = c.recv(HEADER - len(content_len))
+        content_len += chunk
+
+    content_len = struct.unpack("!I", content_len)[0]
+    # print(f"content-len: {content_len}")
+
+    content = b''
+    while len(content) < content_len:
+        chunk = c.recv(content_len - len(content))
+        content += chunk
+
+    # print(content)
+    type_req_len_bytes = content[:1]
+    type_req_len = struct.unpack("B", type_req_len_bytes)[0]
+
+    type_req = content[1:type_req_len + 1]
+
+    if type_req.decode(FORMAT) != TYPE_DATA_TRANS:
+        print(f"this packet is not a data transmission type, {type_req}")
+        return
+
+    # print(f"len of this header-type: {type_req_len}, type_request: {type_req}")
+
+    data = content[type_req_len + 1:]
+    data = data.decode(FORMAT)
+    print(data)
+
+    f = file_handler(("./test/" + author), "a")
+    f.write(data)
+
+
+def handle_conn(client: socket) -> None:
+    details = recv_ack_header(client)
+    n_packets = int(details[0])
+    author = str(details[1])
+
+    packet_sync = 0
+    while packet_sync < n_packets:
+        if packet_sync == n_packets:
+            print("done over here, not allowed to send more than proposed")
+            break
+        recv_content(client, author)
+        packet_sync += 1
+        # print(f"pack-sync -> {packet_sync}")
+
+
+create_server(6000)

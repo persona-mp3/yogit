@@ -38,6 +38,7 @@ type Sha1Hash struct {
 
 func YoGit() {
 	fmt.Println("WELCOME TO YOGIT")
+	fmt.Println("NEURALNUME")
 }
 
 const (

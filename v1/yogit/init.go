@@ -23,13 +23,10 @@ func UpdateHeader(branchName string) {
 		log.Fatal(err)
 	}
 	defer HEADER.Close()
-	fmt.Println(HEADER.Name())
-
+	fmt.Println("updated header")
 	if _, err := fmt.Fprintf(HEADER, "%s/%s", common.BRANCH_REFS, branchName); err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Printf("written to HEADER, %s%s\n", common.BRANCH_REFS, branchName)
 
 }
 

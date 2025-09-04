@@ -14,50 +14,63 @@ import (
 	"github.com/liamg/tml"
 )
 
+type stagingInfo struct {
+	name   string
+	hashId string
+	perm   fs.FileMode
+}
+
+var stageFiles []stagingInfo
+
 // stagingArea reads all the files in the current directory and saves them to the stage or file.
-func stagingArea(base string) []string {
-	var files []string
+func stagingArea(base string) {
 	dirEntries, err := os.ReadDir(base)
 	if err != nil {
 		log.Fatalf("error: occured in staging area %s\n", err)
 	}
 
 	for _, path := range dirEntries {
+		fileInfo := stagingInfo{}
 		if slices.Contains(common.IGNORE_FILES, path.Name()) {
 			continue
 		} else if path.IsDir() {
 
 			filepath.WalkDir(path.Name(), func(path string, d fs.DirEntry, err error) error {
 				if strings.Contains(path, "/") {
-					files = append(files, path)
-				} else {
-					return nil
+					fileInfo.name = path
+					info, _ := d.Info()
+					fileInfo.perm = info.Mode().Perm()
+					stageFiles = append(stageFiles, fileInfo)
 				}
 				return nil
 			})
 			continue
 		}
-		files = append(files, path.Name())
+
+		fileInfo.name = path.Name()
+		fsInfo, _ := path.Info()
+		fileInfo.perm = fsInfo.Mode().Perm()
+		stageFiles = append(stageFiles, fileInfo)
 	}
 
-	out := tml.Sprintf("<yellow>Done reading all files</yellow>")
-	fmt.Println(out)
-
-	return files
 }
 
 // saveBlob converts all file contents into blobs by hashing the content with sha1
-func saveToBlob(files []string) {
+func saveToBlob() {
 
-	for _, path := range files {
-		src, err := os.ReadFile(path)
+	for idx, path := range stageFiles {
+		src, err := os.ReadFile(path.name)
 		if err != nil {
-			log.Fatalf("error: occured in reading %s\n %s\n", path, err)
+			log.Fatalf("error: occured in reading %s\n %s\n", path.name, err)
 		}
 
+		// Get hashed content
 		hashId := utils.Hasher(src)
 		parentFolder, blobName := hashId[:2], hashId[2:]
 
+		stageFiles[idx].hashId = hashId
+
+		// Create parent folder
 		objectParent := filepath.Join(common.ROOT_DIR_OBJECTS, parentFolder)
 		if err := os.Mkdir(objectParent, 0o755); err != nil && !os.IsExist(err) {
 			log.Fatalf("error: occured in creating object parent: %s\n %s\n", objectParent, err)
@@ -69,17 +82,32 @@ func saveToBlob(files []string) {
 		if err != nil {
 			log.Fatalf("error: occured in creating object parent: %s\n %s\n", objectParent, err)
 		}
+		defer f.Close()
 
 		if _, err := fmt.Fprint(f, string(src)); err != nil {
 			log.Fatal(err)
 		}
 
-		fmt.Printf("written content successfully. HashID: %s, Parent: %s, Blob: %s\n", hashId, parentFolder, blobFile)
 	}
 
 }
 
 func Add(base string) {
-	files := stagingArea(base)
-	saveToBlob(files)
+	stagingArea(base)
+	saveToBlob()
+
+	// Open stage file
+	f, err := os.OpenFile(common.ROOT_STAGE_FILE, os.O_CREATE|os.O_WRONLY, 0o766)
+	if err != nil {
+		log.Fatal("error: ", err)
+	}
+
+	for _, stageInfo := range stageFiles {
+		if _, err := fmt.Fprintf(f, "%s %s %s\n", stageInfo.perm, stageInfo.name, stageInfo.hashId); err != nil {
+			panic(err)
+		}
+	}
+
+	out := tml.Sprintf("<green>Staged all files</green>")
+	fmt.Println(out)
 }

@@ -77,7 +77,7 @@ func (c Commit) SaveCommitBlob() {
 }
 
 // UpdateBranch calls GetActiveBranch, truncates the branch and writes the new commit Id to the branch
-func (c Commit) UpdateBranch() {
+func UpdateBranch(commitId string) {
 	branchPath := GetActiveBranch()
 	f, err := os.OpenFile(branchPath, os.O_TRUNC|os.O_WRONLY, 0o755)
 	if err != nil {
@@ -85,7 +85,8 @@ func (c Commit) UpdateBranch() {
 	}
 	defer f.Close()
 
-	latestCommit := string(c.Id)
+	// latestCommit := string(c.Id)
+	latestCommit := commitId
 
 	if _, err := fmt.Fprintf(f, "%s", latestCommit); err != nil {
 		log.Fatal(err)

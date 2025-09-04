@@ -114,7 +114,7 @@ func Save(commitMsg string) {
 	treeBlob := saveState()
 	c := commitMeta(commitMsg, treeBlob)
 	c.SaveCommitBlob()
-	c.UpdateBranch()
+	UpdateBranch(string(c.Id))
 	c.UpdateLog()
 
 }

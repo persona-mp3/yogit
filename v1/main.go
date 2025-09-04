@@ -10,4 +10,6 @@ func main() {
 	yogit.Add(BASE)
 	yogit.Checkout("version1")
 	yogit.Save("feat: added checkout feature")
+	yogit.Checkout("refactor")
+	yogit.Switch("version1")
 }

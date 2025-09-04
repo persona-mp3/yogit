@@ -13,7 +13,7 @@ import (
 // updateHeader takes in the name of a branch provided and writes it to the HEADER file.
 //
 // Formatted as refs:/refs/heads/master.
-func updateHeader(branchName string) {
+func UpdateHeader(branchName string) {
 	// fullBranch := fmt.Sprintf("%s/%s", common.BRANCH_REFS, branchName)
 	// fmt.Printf("Updating header to %s \n", fullBranch)
 
@@ -91,5 +91,5 @@ func Init(base string) {
 	}
 
 	initFolders(base)
-	updateHeader("master")
+	UpdateHeader("master")
 }

@@ -16,3 +16,8 @@ const (
 	BRANCH_REFS   = "refs:refs/heads"
 	LOG_LOGS_FILE = ".yogit/log/logs.txt"
 )
+
+var IGNORE_FILES = []string{
+	".git", ".png", ".jpg", "__pycache__", 
+	"node_modules", ".yogit",
+}

@@ -7,4 +7,5 @@ import (
 func main() {
 	BASE := "."
 	yogit.Init(BASE)
+	yogit.Add(BASE)
 }

@@ -18,6 +18,9 @@ const (
 )
 
 var IGNORE_FILES = []string{
-	".git", ".png", ".jpg", "__pycache__", 
+	".git", ".png", ".jpg", "__pycache__",
 	"node_modules", ".yogit",
 }
+
+// Represents the hashId for commits
+type CommitId string

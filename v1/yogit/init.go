@@ -14,8 +14,6 @@ import (
 //
 // Formatted as refs:/refs/heads/master.
 func UpdateHeader(branchName string) {
-	// fullBranch := fmt.Sprintf("%s/%s", common.BRANCH_REFS, branchName)
-	// fmt.Printf("Updating header to %s \n", fullBranch)
 
 	HEADER, err := os.OpenFile(common.ROOT_HEADER_FILE, os.O_CREATE|os.O_RDWR, 0o777)
 	if err != nil {
@@ -23,7 +21,6 @@ func UpdateHeader(branchName string) {
 		log.Fatal(err)
 	}
 	defer HEADER.Close()
-	fmt.Println("updated header")
 	if _, err := fmt.Fprintf(HEADER, "%s/%s", common.BRANCH_REFS, branchName); err != nil {
 		log.Fatal(err)
 	}
@@ -69,9 +66,14 @@ func initFolders(base string) {
 		log.Fatalf("error: %s\n", err)
 	}
 
-	// creating default master branch
-	if _, err := os.Create(common.MASTER_BRANCH); err != nil {
-		log.Fatalf("error: %s\n", err)
+	// creating default master branch, and writing default commit of 00000000
+	f, err := os.Create(common.MASTER_BRANCH)
+	if err != nil {
+		log.Fatalf("error: occured while creating default master branch %s\n", err)
+	}
+	defer f.Close()
+	if _, err := fmt.Fprintf(f, "000000000000000"); err != nil {
+		log.Fatalf("error: occured while writing default commit\n %s\n", err)
 	}
 
 	out := tml.Sprintf("<green>Yogit initialised</green>")

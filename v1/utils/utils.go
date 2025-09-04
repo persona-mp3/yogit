@@ -19,3 +19,4 @@ func Hasher(content []byte) string {
 	hashId := hex.EncodeToString(hashedContent)
 	return hashId
 }
+

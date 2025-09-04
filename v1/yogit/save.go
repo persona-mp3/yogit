@@ -103,6 +103,37 @@ func commitMeta(commitMsg string, treeBlob Blob) Commit {
 	// update the current branch and log file with this commit
 }
 
+// SaveCommitBlob just like saveBlob saves a commit metadata at the blob level in the objects folder
+func (c Commit) SaveCommitBlob() {
+	// to save a commit, we'll need to create its path in object folder
+	parentFolder := string(c.Id[:2])
+	blobName := string(c.Id[2:])
+
+	parentPath := filepath.Join(common.ROOT_DIR_OBJECTS, parentFolder)
+	blobPath := filepath.Join(parentPath, blobName)
+
+	if err := os.Mkdir(parentPath, 0o755); err != nil && !os.IsExist(err) {
+		log.Fatal("error from method: saveCommit", err)
+	}
+
+	f, err := os.Create(blobPath)
+	if err != nil {
+		log.Fatal("error: occured in creating blob", blobPath)
+	}
+	defer f.Close()
+
+	logFormat := fmt.Sprintf(
+		`id: %s    tree: %s    parent: %s    msg: %s  time: %s `,
+		string(c.Id), c.Tree, c.ParentCommit, c.CommitMsg, c.CommittedAt.Format("Jan 2, 1990 3:04 PM"),
+	)
+
+	if _, err := fmt.Fprintf(f, "%s", logFormat); err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Commit Details:\n%s\n", logFormat)
+}
+
 // Save command takes in the commit message and saves it to the blob level alongside updating
 //
 // logs, and branches. It starts by hashing the index file, calling saveState(), and then

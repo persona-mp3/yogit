@@ -10,23 +10,6 @@ import (
 	"github.com/liamg/tml"
 )
 
-// updateHeader takes in the name of a branch provided and writes it to the HEADER file.
-//
-// Formatted as refs:/refs/heads/master.
-func UpdateHeader(branchName string) {
-
-	HEADER, err := os.OpenFile(common.ROOT_HEADER_FILE, os.O_CREATE|os.O_RDWR, 0o777)
-	if err != nil {
-		fmt.Println("error in updatingHeader")
-		log.Fatal(err)
-	}
-	defer HEADER.Close()
-	if _, err := fmt.Fprintf(HEADER, "%s/%s", common.BRANCH_REFS, branchName); err != nil {
-		log.Fatal(err)
-	}
-
-}
-
 // initFolders create all neccessary base folders and file structure
 func initFolders(base string) {
 	root := filepath.Join(base, common.ROOT)

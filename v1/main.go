@@ -8,5 +8,6 @@ func main() {
 	BASE := "."
 	yogit.Init(BASE)
 	yogit.Add(BASE)
-	yogit.Save("feat: saving commit messages")
+	yogit.Checkout("version1")
+	yogit.Save("feat: added checkout feature")
 }

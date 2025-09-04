@@ -92,15 +92,14 @@ func saveToBlob() {
 
 }
 
-// The Add command simply saves the current state of the whole repostiory. When executed, all files are saved 
+// The Add command simply saves the current state of the whole repostiory. When executed, all files are saved
 //
-// at the blob level except node_modules and more. After that, the STAGE area is used to store the map of all 
-// these files 
+// at the blob level except node_modules and more. After that, the STAGE area is used to store the map of all
+// these files
 //
-// For each file, their meta-data ie file-permissions, path and folder structure are recorded, along side their hashId 
+// All files, their meta-data ie file-permissions, path and folder structure are recorded, along side their hashId
 //
 // for future mapping and referencing when backtracking
-// 
 func Add(base string) {
 	stagingArea(base)
 	saveToBlob()

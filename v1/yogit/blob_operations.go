@@ -11,12 +11,14 @@ import (
 
 // GetParentCommit gets the latest commit by calling GetActiveBranch and returns
 //
-// the previous commit made in CommitId struct
+// It then locates that branch and retrieves it's current commit, and returns it,
+//
+// stored in common.CommitId string struct
 func GetParentCommit() common.CommitId {
 	activeBranch := GetActiveBranch()
 	PARENT_COMMIT, err := os.ReadFile(activeBranch)
 	if err != nil {
-		log.Fatalf("error: occcurred trying to read latest commit\n %s\n", err)
+		log.Fatalf("error: occurred trying to read latest commit\n %s\n", err)
 	}
 
 	return common.CommitId(string(PARENT_COMMIT))
@@ -43,37 +45,6 @@ func GetActiveBranch() string {
 	branchPath := filepath.Join(common.BRANCH_PATH, branchName)
 
 	return branchPath
-}
-
-// SaveCommitBlob just like saveBlob saves a commit metadata at the blob level in the objects folder
-func (c Commit) SaveCommitBlob() {
-	// to save a commit, we'll need to create its path in object folder
-	parentFolder := string(c.Id[:2])
-	blobName := string(c.Id[2:])
-
-	parentPath := filepath.Join(common.ROOT_DIR_OBJECTS, parentFolder)
-	blobPath := filepath.Join(parentPath, blobName)
-
-	if err := os.Mkdir(parentPath, 0o755); err != nil && !os.IsExist(err) {
-		log.Fatal("error from method: saveCommit", err)
-	}
-
-	f, err := os.Create(blobPath)
-	if err != nil {
-		log.Fatal("error: occured in creating blob", blobPath)
-	}
-	defer f.Close()
-
-	logFormat := fmt.Sprintf(
-		`id: %s    tree: %s    parent: %s    msg: %s  time: %s `,
-		string(c.Id), c.Tree, c.ParentCommit, c.CommitMsg, c.CommittedAt.Format("Jan 2, 1990 3:04 PM"),
-	)
-
-	if _, err := fmt.Fprintf(f, "%s", logFormat); err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("Commit Detetails -> \n %s\n", logFormat)
 }
 
 // UpdateBranch calls GetActiveBranch, truncates the branch and writes the new commit Id to the branch
@@ -108,5 +79,42 @@ func (c Commit) UpdateLog() {
 		panic(err)
 	}
 
-	fmt.Println("log files updated")
+}
+
+// CreateBranch creates a new branch in .yogit/refs/heads/name path
+//
+// The file returned is for os.O_WRONLY and os.O_CREATE. The caller is responsible
+// for closing the file
+func CreateBranch(name string) (*os.File, error) {
+	// first check if the  branch exists
+	branchPath := filepath.Join(common.BRANCH_PATH, name)
+	if _, err := os.Stat(branchPath); err == nil {
+		return nil, fmt.Errorf("branch already exists in %s ", branchPath)
+
+	}
+
+	f, err := os.OpenFile(branchPath, os.O_WRONLY|os.O_CREATE, 0o755)
+	if err != nil {
+		fmt.Printf("error: occured in creating new branch: \n %s\n", err)
+		return nil, err
+	}
+
+	return f, nil
+}
+
+// updateHeader takes in the name of a branch provided and writes it to the HEADER file.
+//
+// Formatted as refs:/refs/heads/master.
+func UpdateHeader(branchName string) {
+
+	HEADER, err := os.OpenFile(common.ROOT_HEADER_FILE, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0o777)
+	if err != nil {
+		fmt.Println("error in updatingHeader")
+		log.Fatal(err)
+	}
+	defer HEADER.Close()
+	if _, err := fmt.Fprintf(HEADER, "%s/%s", common.BRANCH_REFS, branchName); err != nil {
+		log.Fatal(err)
+	}
+
 }

@@ -2,7 +2,7 @@
 
 echo "Installing and configuring Yogit" 
 echo "Building executable..."
-$(go build main.go)
+$(go build ./v1/main.go)
 
 windows="main.exe"
 linux="main"

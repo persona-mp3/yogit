@@ -9,7 +9,7 @@ func main() {
 	yogit.Init(BASE)
 	yogit.Add(BASE)
 	yogit.Checkout("version1")
-	yogit.Save("feat: added checkout feature")
+	yogit.Save("feat: added switch feature")
 	yogit.Checkout("refactor")
-	yogit.Switch("version1")
+	// yogit.Switch("version1")
 }

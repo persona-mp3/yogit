@@ -3,16 +3,22 @@ package yogit
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"v1/common"
+
+	"github.com/liamg/tml"
 )
 
 type commitState struct {
+	// full path to parent blob
 	parent string
-	tree   string
+	// full path to tree blob
+	tree string
 }
 
 func findBranch(name string) commitState {
@@ -35,7 +41,6 @@ func findBranch(name string) commitState {
 
 	// since the branch exists, lets get the last commit it had
 	latestCommit := string(content)
-	fmt.Printf("latest commit on: %s is %s\n", name, latestCommit)
 
 	// now search the object folder for the commit details
 	commitPath := filepath.Join(common.ROOT_DIR_OBJECTS, latestCommit[:2], latestCommit[2:])
@@ -60,8 +65,6 @@ func findBranch(name string) commitState {
 
 	treeParent := strings.ReplaceAll(commitTreeParent, " ", "")  // remove all whitespace
 	commitTree, commitParent := treeParent[:40], treeParent[47:] // after first 40hex string, len(parent) so we offset by 7
-	fmt.Println("CommitTree:", commitTree)
-	fmt.Println("CommitParent", commitParent)
 
 	// create path to the tree location
 	treePath := filepath.Join(common.ROOT_DIR_OBJECTS, commitTree[:2], commitTree[2:])
@@ -74,6 +77,7 @@ func findBranch(name string) commitState {
 }
 
 type fileSnapshot struct {
+	// perm file permissions in octal notation ie 644
 	perm     string
 	blobPath string
 	fileName string
@@ -96,11 +100,14 @@ func (state commitState) findState() {
 		id := parseId(line)
 		s.blobPath = filepath.Join(common.ROOT_DIR_OBJECTS, id[:2], id[2:])
 		s.fileName = parseName(line, id)
-		fmt.Printf("fileName: %s ,blobPath: %s, perms: %s\n", s.fileName, s.blobPath, s.perm)
+		s.buildState()
 	}
+	out := tml.Sprintf("<green>Full state restored</green>")
+	fmt.Println(out)
 
 }
 
+// parseId extracts the hashId for each line in STAGE file saved at blob level
 func parseId(line string) string {
 	var id string
 	var revId string
@@ -114,13 +121,41 @@ func parseId(line string) string {
 	return revId
 }
 
+// parseName extracts the fileName for each line in STAGE file saved at blob level
 func parseName(line string, id string) string {
 	nameHashId := line[3:] // offseting from the octal permission
 	fileName, _, _ := strings.Cut(nameHashId, id)
 	return fileName
 }
 
-// func parseToUkkk
+// buildState extracts the content from a blob and copies it to the file in the current state.
+//
+// # When the blob exists, but the file doesnt exist in the root repository, it creates it and copies
+//
+// the previous content into the newly created file, otherwise, truncates it
+func (s fileSnapshot) buildState() {
+	src, err := os.Open(s.blobPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer src.Close()
+
+	octalPerm, err := strconv.ParseInt(s.perm, 8, 32)
+	if err != nil {
+		fmt.Printf("could not convert %s to octal\n", s.perm)
+		panic(err)
+	}
+	dst, err := os.OpenFile(s.fileName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.FileMode(octalPerm))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer dst.Close()
+
+	io.Copy(dst, src)
+
+	out := tml.Sprintf("<green> Snapshot done for %s </green>", s.fileName)
+	fmt.Println(out)
+}
 
 func Switch(branchName string) {
 	repoState := findBranch(branchName)

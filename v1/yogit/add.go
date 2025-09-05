@@ -17,7 +17,7 @@ import (
 type stagingInfo struct {
 	name   string
 	hashId string
-	perm   fs.FileMode
+	perm   string
 }
 
 var stageFiles []stagingInfo
@@ -39,7 +39,8 @@ func stagingArea(base string) {
 				if strings.Contains(path, "/") {
 					fileInfo.name = path
 					info, _ := d.Info()
-					fileInfo.perm = info.Mode().Perm()
+					octalPerm := fmt.Sprintf("%o", info.Mode().Perm())
+					fileInfo.perm = octalPerm
 					stageFiles = append(stageFiles, fileInfo)
 				}
 				return nil
@@ -49,7 +50,9 @@ func stagingArea(base string) {
 
 		fileInfo.name = path.Name()
 		fsInfo, _ := path.Info()
-		fileInfo.perm = fsInfo.Mode().Perm()
+		octalPerm := fmt.Sprintf("%o", fsInfo.Mode().Perm())
+		// fileInfo.perm = fsInfo.Mode().Perm()
+		fileInfo.perm = octalPerm
 		stageFiles = append(stageFiles, fileInfo)
 	}
 
@@ -97,7 +100,7 @@ func saveToBlob() {
 // at the blob level except node_modules and more. After that, the STAGE area is used to store the map of all
 // these files
 //
-// All files, their meta-data ie file-permissions, path and folder structure are recorded, along side their hashId
+// # All files, their meta-data ie file-permissions, path and folder structure are recorded, along side their hashId
 //
 // for future mapping and referencing when backtracking
 func Add(base string) {

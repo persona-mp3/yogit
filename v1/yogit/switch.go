@@ -1,6 +1,7 @@
 package yogit
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -62,14 +63,66 @@ func findBranch(name string) commitState {
 	fmt.Println("CommitTree:", commitTree)
 	fmt.Println("CommitParent", commitParent)
 
+	// create path to the tree location
+	treePath := filepath.Join(common.ROOT_DIR_OBJECTS, commitTree[:2], commitTree[2:])
+	parentPath := filepath.Join(common.ROOT_DIR_OBJECTS, commitParent[:2], commitParent[2:])
+
 	return commitState{
-		parent: commitParent,
-		tree:   commitTree,
+		parent: parentPath,
+		tree:   treePath,
 	}
 }
 
-func findState(repoState commitState) {}
+type fileSnapshot struct {
+	perm     string
+	blobPath string
+	fileName string
+}
+
+// findState takes the commitState type and uses the tree property to find each blob
+func (state commitState) findState() {
+
+	f, err := os.OpenFile(state.tree, os.O_RDONLY, 0555)
+	if err != nil {
+		log.Fatalf("error: occured in opening tree:\n %s\n", err)
+	}
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		var s fileSnapshot
+		line := scanner.Text()
+		line = strings.ReplaceAll(line, " ", "")
+		s.perm = line[:3]
+		id := parseId(line)
+		s.blobPath = filepath.Join(common.ROOT_DIR_OBJECTS, id[:2], id[2:])
+		s.fileName = parseName(line, id)
+		fmt.Printf("fileName: %s ,blobPath: %s, perms: %s\n", s.fileName, s.blobPath, s.perm)
+	}
+
+}
+
+func parseId(line string) string {
+	var id string
+	var revId string
+	for i := len(line) - 1; i > 0 && len(id) < 40; i-- {
+		id += string(line[i])
+	}
+
+	for i := len(id) - 1; i >= 0; i-- {
+		revId += string(id[i])
+	}
+	return revId
+}
+
+func parseName(line string, id string) string {
+	nameHashId := line[3:] // offseting from the octal permission
+	fileName, _, _ := strings.Cut(nameHashId, id)
+	return fileName
+}
+
+// func parseToUkkk
 
 func Switch(branchName string) {
-	findBranch(branchName)
+	repoState := findBranch(branchName)
+	repoState.findState()
 }

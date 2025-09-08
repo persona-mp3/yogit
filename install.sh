@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 echo "Installing and configuring Yogit" 
 echo "Building executable..."
